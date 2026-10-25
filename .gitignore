@@ -6,3 +6,6 @@ build/recalc/
 *.xlsx#
 ~$*.xlsx
 .venv/
+
+# Agent worktrees for parallel workers (each is its own branch, never committed here)
+.claude/worktrees/
