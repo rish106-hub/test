@@ -18,7 +18,7 @@ module_doc = ""   # integration session; its contract is spec/ itself
 builds_tables = ["tbl_GlobalInputs", "tbl_MetricDictionary", "tbl_Governance", "tbl_ValidationChecks"]
 private_tables = []
 defines_names = ["in_*"]
-consumes = ["tbl_NAVSummary"]
+consumes = ["tbl_NAVSummary", "out_Controls_At_Default"]
 reference_functions = []
 contract_tests = []
 writes_csv = ["governance_log"]
@@ -48,7 +48,7 @@ writes_csv = [
 module_doc = "src/valuations/MODULE.md"
 builds_tables = ["tbl_Assumptions", "tbl_ValuationOutputs", "tbl_HistoricalMetrics"]
 private_tables = ["tbl_Val_*"]
-defines_names = ["out_*"]
+defines_names = ["out_*_FV_Base", "out_*_FV_Bear", "out_*_FV_Bull", "out_*_TV_Share"]   # workbook_interface §2 (D-029)
 consumes = [
   "in_*", "tbl_Registry", "tbl_MarketPrices", "tbl_RawFinancials", "tbl_CorporateActions",
   "tbl_MissingData", "tbl_MetricDictionary", "tbl_PeerSummary",
@@ -77,7 +77,7 @@ builds_tables = [
   "tbl_CustomAllocation", "tbl_BenchmarkTRI",
 ]
 private_tables = ["tbl_Nav_*"]
-defines_names = []
+defines_names = ["out_Controls_At_Default"]
 consumes = ["in_*", "tbl_Registry", "tbl_MarketPrices", "tbl_ValuationOutputs", "tbl_MissingData"]
 reference_functions = [
   "src.scenarios.pricing:resolve_controls", "src.fund_nav.classify:coverage_status",

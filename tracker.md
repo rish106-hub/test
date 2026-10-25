@@ -44,7 +44,7 @@ Last updated: 2026-10-25 by 00-main (integration session).
 | Integration branch | `claude/financial-modeling-architecture-o2xiwz`. Only 00-main pushes here |
 | Worker branches | `wave1/<worker-id>`, e.g. `wave1/01-data` |
 | Requirement | spec v3.0, `spec/source/Indian_Equity_Valuation_and_MF_NAV_Model_v3.xml` |
-| Contract version | v1.1 (`spec/financial_model_contract.md`; changes in `data/canonical/governance_log.csv`) |
+| Contract version | v1.2 (`spec/financial_model_contract.md`; changes in `data/canonical/governance_log.csv`) |
 | Output | `build/out/Indian_Equity_Valuation_and_MF_NAV_Model.xlsx`, generated and never committed |
 | Scope | C001–C007 (HDFC, ICICI, Kotak, Federal, AU SFB, Indian Bank, Max Financial); MF001 Parag Parikh Flexi Cap, MF002 HDFC Mid Cap (Direct Plan, Growth) |
 
@@ -70,7 +70,7 @@ Last updated: 2026-10-25 by 00-main (integration session).
 | 00-main | Integration, contract, this file | opus / xhigh | `claude/financial-modeling-architecture-o2xiwz` | Waiting for worker reports | see `git log` | yes | Integrate each worker as it reports (§7) |
 | 01-data | Data and source audit | sonnet / high | `wave1/01-data` | RUNNING, resumed 12:29 UTC in a recreated worktree; first-run downloads were lost (never committed) | none yet (base `f752ee1`) | yes, after each commit | Feasibility report; both fund snapshots; HDFC Bank source trail; prices; NAVs; G-sec yield |
 | 02-valuation | Bank valuation | opus / xhigh | `wave1/02-valuation` | RUNNING, fixture phase; next: parameter registry, composite bank model, sheet builder | `7b7607a` (reference functions) | yes, after each commit | Reference functions + bank sheet on fixtures; then real HDFC Bank after 01 merges |
-| 03-nav | NAV engine and controls | sonnet / high | `wave1/03-nav` | RUNNING, fixture phase | `81ba348` (SCENARIO_ANALYSIS, holdings sheets, MF_NAV_CALCULATOR) | yes, after each commit | Engine on fixtures; then the real fund holding HDFC Bank after 01 and 02 merge |
+| 03-nav | NAV engine and controls | sonnet / high | `wave1/03-nav` | FIXTURE PATH DONE, verified by 00-main (ownership OK; module contract OK; contract tests 44/44 under `--strict-impl`; LibreOffice self-check 13/13). Rework requested for contract v1.2. Merge waits for 01 and 02 (production build) | `03bffad` | yes | Apply D-029: import the canonical patterns, test each shock input in `Control_Warning` (T-PRC-13), define `out_Controls_At_Default`; then the real fund after 01 and 02 merge |
 | 04-charts | Charts and peers | sonnet / medium | none | ON HOLD until G1 (D-028) | none | none | none |
 | 05-qa | Independent reviewer, clean room | opus / high | `wave1/05-qa` | RUNNING; next: W layer | `c117fdb` (I layer) | yes, after each commit | I and W layers, runner; provenance audit and E-01…E-04 after real data |
 
@@ -148,13 +148,15 @@ After 01-data merges, 00-main must also:
 | R-1 | Worker branches were local only | Unmerged work would be lost if the container were reclaimed | 00-main | MITIGATED 2026-10-25: all `wave1/*` pushed. Workers push after every commit; uncommitted edits are still at risk |
 | R-2 | www.nseindia.com and www.hdfcfund.com returned HTTP 403 to a plain request on 2026-10-25 (BSE, AMFI, PPFAS, RBI, SEBI, Nifty Indices returned 200) | NSE prices and the HDFC Mid Cap disclosure may need alternative sources, or be marked unavailable | 01-data | OPEN |
 | R-4 | Usage limit: all four workers stopped together on HTTP 429 (session limit) on 2026-10-25 | Work pauses until the limit resets; uncommitted edits are at risk if a worktree is removed while paused | 00-main | OPEN. Workers now commit and push in small steps. Resume each worker from its pushed branch (§6) |
+| R-5 | VALIDATION_CHECKS doesn't yet read `out_Controls_At_Default` (contract §6.3); wiring it needs the build to stub names as well as tables | W-11's reset flag isn't visible on VALIDATION_CHECKS | 00-main | OPEN, after 03-nav defines the name |
 | R-3 | `in_Valuation_Date`, `in_Price_Date` and `in_Risk_Free_Rate` are blank | A production valuation can't run until they are set from 01-data's sourced data | 00-main | OPEN, waiting on 01-data |
 
 ## 9. Change requests and findings
 
 | ID | From | Subject | Status |
 |---|---|---|---|
-| none yet | | | |
+| CR-03-nav-001 | 03-nav | Holdings link variants; NA-safe `H_MV_MKT` | ACCEPTED, contract v1.2 (D-029) |
+| CR-03-nav-002 | 03-nav | `Controls_At_Default` interface; W-17 scope; net-shock warning | ACCEPTED IN PART (D-029): name added and W-17 rescoped; net-shock warning rejected (T-PRC-13) |
 
 Change requests live in `spec/change_requests/`, findings in `qa/findings/`.
 
@@ -162,6 +164,9 @@ Change requests live in `spec/change_requests/`, findings in `qa/findings/`.
 
 Newest first. One line per event: what changed, the commit, the evidence.
 
+- **2026-10-25.** 03-nav reported the fixture path complete at `03bffad`. 00-main re-ran its checks in a clean worktree: ownership OK, module contract OK, the full test suite 90 passed / 31 skipped / 2 failed (both failures in 00-main files, now fixed), and the LibreOffice self-check 13/13.
+  - Contract v1.2: CR-001 accepted, CR-002 accepted in part (D-029). The full test build now stubs unbuilt modules (D-030), so Wave 1 builds without 04-charts.
+  - 02-valuation's names are narrowed to the four interface names. T-PRC-13 was added; it fails on 03's current code, as intended.
 - **2026-10-25 12:29 UTC.** All four workers hit the usage limit (HTTP 429, reset 12:10 UTC) and were resumed at 12:29.
   - Branch heads at that point: 01 `f752ee1` (no commits; its worktree was removed and its downloads lost), 02 `7b7607a`, 03 `81ba348`, 05 `c117fdb`.
   - 01-data was resumed in a recreated worktree. All workers were told to commit and push in smaller steps.

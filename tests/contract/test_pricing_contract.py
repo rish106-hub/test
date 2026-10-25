@@ -132,3 +132,15 @@ def test_T_PRC_12_global_shock_applies_once_from_the_original_price():
     assert out.market_price_after_shock == approx(675.0)         # 750 x 0.9, not 750 x 0.9 x 0.9
     all_three = resolve_controls(dataclasses.replace(inp, sector_shock_pct=-0.05, market_price_shock_pct=0.02))
     assert all_three.market_price_after_shock == approx(750.0 * 0.90 * 0.95 * 1.02)   # 654.075
+
+
+def test_T_PRC_13_shocks_that_cancel_are_still_disclosed_when_ignored():
+    # D-029: §6.2 tests each shock input, not the net shock. Hand-derived: (1 - 0.20) x (1 + 0.25) = 1.00,
+    # so Effective_Shock_Pct = 0, yet two inputs are set and the mode ignores them.
+    inp = dataclasses.replace(BASE, global_shock_pct=-0.20, market_price_shock_pct=0.25)
+    out = resolve_controls(inp)
+    assert out.effective_shock_pct == approx(0.0, abs=1e-12)
+    assert out.selected_scenario_market_price == 750.0
+    assert out.control_warning == "Price shocks set but ignored (mode: Original Market Price)"
+    shocked = resolve_controls(dataclasses.replace(inp, market_price_mode=M.SHOCK))
+    assert shocked.market_price_after_shock == approx(750.0) and shocked.control_warning == ""
