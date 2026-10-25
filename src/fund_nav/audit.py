@@ -147,7 +147,8 @@ def build_audit_sheet(ctx: WorkbookContext, data, layouts: dict[str, HoldingsLay
         ws.write(r - 1, 0, label, ctx.wb.add_format({"font_name": "Calibri", "font_size": 10}))
         for j, pid in enumerate(plan_ids):
             col = xl.col_name(0, j + 1)
-            ctx.write_formula(OWNER, SHEET, f"{col}{r}", fn(pid, audit_table(plan_fund[pid]), col), role="link")
+            f = fn(pid, audit_table(plan_fund[pid]), col)
+            ctx.write_formula(OWNER, SHEET, f"{col}{r}", f, role=xl.role_of(f, SHEET))
     ctx.reserve_chart_zone(OWNER, "AUDIT_COVERAGE_BY_SECTOR", SHEET, "I4",
                            "Sector valuation coverage showing valued, partially valued and unvalued positions (reads tbl_Nav_Sector_*)")
     ws.set_column(0, 0, 44)
