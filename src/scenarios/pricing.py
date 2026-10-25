@@ -44,9 +44,6 @@ class PriceControlOutputs:
     control_warning: str = ""                      # §6.2: inputs set but ignored by the selected mode; "" if none
 
 
-SHOCK_ROUND_DIGITS = 10   # a net effective shock that rounds to 0 counts as "no shock set" (see MODULE.md)
-
-
 def bias_text(bias_pct: float) -> str:
     """Excel: ROUND(bias*100,2) concatenated into text ("-10", "5.5")."""
     return f"{round(bias_pct * 100, 2):g}"
@@ -60,15 +57,15 @@ def fv_label(mode: FairValueMode, case: Case, bias_pct: float) -> str:
     return f"MANUALLY BIASED fair value ({bias_text(bias_pct)}%)"
 
 
-def control_warning(effective_shock_pct: float, market_mode: MarketPriceMode, absolute_price: float | None,
+def control_warning(global_shock_pct: float, sector_shock_pct: float, security_shock_pct: float,
+                    market_mode: MarketPriceMode, absolute_price: float | None,
                     fv_mode: FairValueMode, bias_pct: float) -> str:
-    """Contract section 6.2: inputs that are set but have no effect under the selected modes.
+    """Contract section 6.2 (D-029): inputs that are set but have no effect under the selected modes.
 
-    The shock test uses the net Effective_Shock_Pct, because the three shock inputs are read in exactly one
-    place (section 6.1 rule 2, W-17). The two differ only when non-zero shocks cancel to exactly zero.
+    Each of the three shock inputs is tested, so shocks that cancel to a net zero are still disclosed.
     """
     parts = []
-    if round(effective_shock_pct, SHOCK_ROUND_DIGITS) != 0 and market_mode != MarketPriceMode.SHOCK:
+    if (global_shock_pct != 0 or sector_shock_pct != 0 or security_shock_pct != 0) and market_mode != MarketPriceMode.SHOCK:
         parts.append(f"Price shocks set but ignored (mode: {market_mode.value})")
     if absolute_price is not None and market_mode != MarketPriceMode.ABSOLUTE:
         parts.append(f"Absolute price set but ignored (mode: {market_mode.value})")
@@ -121,5 +118,5 @@ def resolve_controls(inp: PriceControlInputs) -> PriceControlOutputs:
         fundamental_case_fv=case_fv, selected_scenario_fair_value=sel_fv,
         implied_upside_to_fair_value=upside, fair_value_gap=gap, target_purchase_price=tpp,
         fv_label=fv_label(fv_mode, case, inp.fair_value_bias_pct), control_status=status,
-        control_warning=control_warning(effective, mode, inp.absolute_scenario_price, fv_mode,
-                                        inp.fair_value_bias_pct))
+        control_warning=control_warning(inp.global_shock_pct, inp.sector_shock_pct, inp.market_price_shock_pct, mode,
+                                        inp.absolute_scenario_price, fv_mode, inp.fair_value_bias_pct))

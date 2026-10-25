@@ -17,7 +17,7 @@ def test_missing_market_price_is_a_visible_failure_not_zero():
 
 
 def test_warnings_join_in_contract_order():
-    w = control_warning(-0.1, M.ORIGINAL, 595.0, F.MODEL_BASE, -0.1)
+    w = control_warning(-0.1, 0.0, 0.0, M.ORIGINAL, 595.0, F.MODEL_BASE, -0.1)
     assert w == ("Price shocks set but ignored (mode: Original Market Price); "
                  "Absolute price set but ignored (mode: Original Market Price); "
                  "Fair-value bias set but ignored (mode: Model Base Fair Value)")

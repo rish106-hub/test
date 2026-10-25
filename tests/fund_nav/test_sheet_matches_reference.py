@@ -117,3 +117,16 @@ def test_unmatched_position_is_na_not_zero_and_fails_holdings_coverage(tmp_path)
     h = b.row("tbl_Holdings_MF001", "Holding_Line_ID", "MF001-L2")
     assert h["Holdings_Match_Status"] == "UNMATCHED" and h["Valuation_Coverage_Status"] == "UNVALUED"
     assert h["Current_Market_Price"] == "#N/A"
+
+
+def test_T_PRC_13_cancelling_shocks_are_still_disclosed_and_name_is_defined(tmp_path):
+    def edit(data):
+        set_global(data, "in_Global_Price_Shock_Pct", "-0.2")
+    b = build_isolated(tmp_path, edit=edit, controls={("S90001", "Market_Price_Shock_Pct"): 0.25})
+    kw = {"controls": {"S90001": {"market_price_shock_pct": 0.25}}, "global_shock": -0.2}
+    _assert_controls(b, **kw)
+    pc = b.row("tbl_PriceControls", "Security_ID", "S90001")
+    assert pc["Control_Warning"] == "Price shocks set but ignored (mode: Original Market Price)"
+    assert pc["Selected_Scenario_Market_Price"] == 750
+    assert b.ctx.names["out_Controls_At_Default"]["sheet"] == "SCENARIO_ANALYSIS"
+    assert b.table("tbl_Nav_ControlsStatus")[0]["Controls_At_Default"] is False

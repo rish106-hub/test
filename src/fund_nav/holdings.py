@@ -11,7 +11,6 @@ from dataclasses import dataclass
 from src.common import link_patterns as L
 from src.common import schema as S
 from src.common.workbook import WorkbookContext
-from src.fund_nav import patterns as P
 from src.fund_nav import xl
 
 OWNER = xl.OWNER
@@ -31,15 +30,15 @@ class HoldingsLayout:
 def holdings_formulas() -> dict[str, str]:
     return {
         "Current_Market_Price": L.H_CURRENT_PRICE,
-        "Selected_Scenario_Price": P.selected_price(),
+        "Selected_Scenario_Price": L.H_SELECTED_PRICE,
         "Base_Fair_Value": L.H_BASE_FV,
-        "Scenario_Fair_Value": P.selected_fair_value(),
+        "Scenario_Fair_Value": L.H_SCENARIO_FV,
         "Holdings_Match_Status": L.H_MATCH_STATUS,
-        "Financials_As_Of": P.financials_as_of(),
+        "Financials_As_Of": L.H_FINANCIALS_AS_OF,
         "Valuation_Coverage_Status": L.H_COVERAGE_STATUS,
-        "Adj_Base": P.adj("Base"), "Adj_Bear": P.adj("Bear"), "Adj_Bull": P.adj("Bull"),
-        "Adj_Selected": P.adj("Selected"),
-        "MV_Mkt_INR_Cr": P.mv_mkt(), "MV_Fair_Base_INR_Cr": P.mv_fair_base(), "MV_Scenario_INR_Cr": P.mv_scenario(),
+        "Adj_Base": L.H_ADJ["Base"], "Adj_Bear": L.H_ADJ["Bear"], "Adj_Bull": L.H_ADJ["Bull"],
+        "Adj_Selected": L.H_ADJ["Selected"],
+        "MV_Mkt_INR_Cr": L.H_MV_MKT, "MV_Fair_Base_INR_Cr": L.H_MV_FAIR_BASE, "MV_Scenario_INR_Cr": L.H_MV_SCENARIO,
     }
 
 

@@ -50,7 +50,9 @@ def _price_control_formulas() -> dict[str, str]:
     sel_fv = (f'=IF({fvm}={_q(F.MODEL_BASE.value)},[@Model_FV_Base],'
               f'IF({fvm}={_q(F.FUNDAMENTAL.value)},[@Fundamental_Case_FV],'
               f'IF({fvm}={_q(F.MANUAL_BIAS.value)},[@Fair_Value_After_Bias],NA())))')
-    c1 = f'AND(ROUND([@Effective_Shock_Pct],10)<>0,{mode}<>{_q(M.SHOCK.value)})'
+    sector = xl.lookup(SS, "Sector_Price_Shock_Pct", "[@Sector]", "Sector")
+    # D-029: each of the three inputs is tested (shocks that cancel are still disclosed); only Effective_Shock_Pct applies them.
+    c1 = f'AND(OR(in_Global_Price_Shock_Pct<>0,{sector}<>0,[@Market_Price_Shock_Pct]<>0),{mode}<>{_q(M.SHOCK.value)})'
     c2 = f'AND([@Absolute_Scenario_Price]<>"",{mode}<>{_q(M.ABSOLUTE.value)})'
     c3 = f'AND([@Fair_Value_Bias_Pct]<>0,{fvm}<>{_q(F.MANUAL_BIAS.value)})'
     t1 = f'"Price shocks set but ignored (mode: "&{mode}&")"'
@@ -143,6 +145,8 @@ def build_scenario_sheet(ctx: WorkbookContext, data) -> None:
     cols = [TableColumn(c.header, formula=c.formula, role=(xl.role_of(c.formula, SHEET) if c.formula else c.role),
                         number="count" if c.formula and c.header != "Controls_At_Default" else "general") for c in status_cols]
     ctx.add_table(OWNER, SHEET, TOP_STATUS, 0, STATUS, cols, [[0.0]])
+    # D-029: the interface for the reset check (data row of the first column)
+    ctx.define_name(OWNER, "out_Controls_At_Default", SHEET, f"A{TOP_STATUS + 2}")
 
     # ---- tbl_PriceControls
     formulas = _price_control_formulas()
