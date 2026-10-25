@@ -116,3 +116,16 @@ def test_W_SELF_02_value_checks_pass_on_a_correct_workbook_and_fail_on_mutants(t
     assert not _run(V.test_W_03c_nav_summary_equals_cleanroom, _synth(tmp_path_factory, "m2", caption))
     assert not _run(V.test_W_03a_price_controls_equal_cleanroom, _synth(tmp_path_factory, "m3", tpp))
     assert not _run(V.test_W_11_reset_identity_at_default_controls, _synth(tmp_path_factory, "m4", scen))
+
+
+def test_W_SELF_03_manual_tests_fail_when_inputs_do_not_propagate(tmp_path_factory, tmp_path):
+    """Negative control for W-10: on a value-only workbook (no formulas) a perturbed input cannot move
+    any output, so each manual-test body must fail rather than pass vacuously."""
+    from tests.workbook import test_W_10_manual as M
+    wb = _synth(tmp_path_factory, "static")
+    sid = M.pick_valued_held(wb)
+    assert sid == "S90001"
+    for i, body in enumerate((M.manual_1_shock, M.manual_2_bias, M.manual_3_absolute, M.manual_5_fair_value,
+                              M.manual_7_unvalued, M.manual_8_sector)):
+        with pytest.raises(AssertionError):
+            body(wb, sid, tmp_path / str(i))
