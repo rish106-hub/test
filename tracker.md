@@ -25,7 +25,7 @@ Last updated: 2026-10-25 by 00-main (integration session).
    git branch -a --list '*wave1/*'
    git worktree list
    ```
-   If a branch listed in §4 is missing, it was never pushed and was lost with its container. Relaunch that worker (§6).
+   Every worker branch is pushed to GitHub after each commit, so `origin/wave1/<id>` holds the latest work. Resume from it. Commits newer than the last push can be missing; check the worker's own report.
 4. Run the baseline before changing anything:
    ```
    pip install -r requirements.txt
@@ -68,11 +68,11 @@ Last updated: 2026-10-25 by 00-main (integration session).
 | ID | Role | Model / effort | Branch | Status | Last commit | Pushed? | Next action |
 |---|---|---|---|---|---|---|---|
 | 00-main | Integration, contract, this file | opus / xhigh | `claude/financial-modeling-architecture-o2xiwz` | Waiting for worker reports | see `git log` | yes | Integrate each worker as it reports (§7) |
-| 01-data | Data and source audit | sonnet / high | `wave1/01-data` | RUNNING | none yet (base `f752ee1`) | **no** | Feasibility report; both fund snapshots; HDFC Bank source trail; prices; NAVs; G-sec yield |
-| 02-valuation | Bank valuation | opus / xhigh | `wave1/02-valuation` | RUNNING, fixture phase | none yet | **no** | Reference functions + bank sheet on fixtures; then real HDFC Bank after 01 merges |
-| 03-nav | NAV engine and controls | sonnet / high | `wave1/03-nav` | RUNNING, fixture phase | none yet | **no** | Engine on fixtures; then the real fund holding HDFC Bank after 01 and 02 merge |
+| 01-data | Data and source audit | sonnet / high | `wave1/01-data` | RUNNING | none yet (base `f752ee1`) | yes, after each commit | Feasibility report; both fund snapshots; HDFC Bank source trail; prices; NAVs; G-sec yield |
+| 02-valuation | Bank valuation | opus / xhigh | `wave1/02-valuation` | RUNNING, fixture phase | none yet | yes, after each commit | Reference functions + bank sheet on fixtures; then real HDFC Bank after 01 merges |
+| 03-nav | NAV engine and controls | sonnet / high | `wave1/03-nav` | RUNNING, fixture phase | `88a3998` (reference functions) | yes, after each commit | Engine on fixtures; then the real fund holding HDFC Bank after 01 and 02 merge |
 | 04-charts | Charts and peers | sonnet / medium | none | ON HOLD until G1 (D-028) | none | none | none |
-| 05-qa | Independent reviewer, clean room | opus / high | `wave1/05-qa` | RUNNING | none yet | **no** | I and W layers, runner; provenance audit and E-01…E-04 after real data |
+| 05-qa | Independent reviewer, clean room | opus / high | `wave1/05-qa` | RUNNING | none yet | yes, after each commit | I and W layers, runner; provenance audit and E-01…E-04 after real data |
 
 The model and effort column is the plan from `CLAUDE.md`. Use the closest equivalent in another tool. What matters is that 02 and 05 get the strongest reasoning.
 
@@ -99,7 +99,7 @@ With Claude Code: `claude --worktree <id> --model <model> --effort <effort> "<pr
 
 **Wave 1 additions, for all workers:**
 - Work on `wave1/<id>` and commit in small logical commits.
-- Push only if 00-main or the user said to. Otherwise 00-main merges locally.
+- Push your own branch after every commit: `git push -u origin wave1/<id>`. Never push the integration branch or another worker's branch. The user approved this on 2026-10-25.
 - Never commit an `.xlsx`.
 - Run `python tools/check_ownership.py <id> claude/financial-modeling-architecture-o2xiwz` before handing over.
 - Don't stop to ask questions. Make the defensible call, record it, and carry on.
@@ -145,7 +145,7 @@ After 01-data merges, 00-main must also:
 
 | # | Issue | Impact | Owner | Status |
 |---|---|---|---|---|
-| R-1 | Worker branches `wave1/*` exist only in the local container and are not pushed | If the container is reclaimed or you switch environments, unmerged worker work is lost | 00-main | OPEN. Mitigation: integrate promptly, or push `wave1/*` with the user's permission |
+| R-1 | Worker branches were local only | Unmerged work would be lost if the container were reclaimed | 00-main | MITIGATED 2026-10-25: all `wave1/*` pushed. Workers push after every commit; uncommitted edits are still at risk |
 | R-2 | www.nseindia.com and www.hdfcfund.com returned HTTP 403 to a plain request on 2026-10-25 (BSE, AMFI, PPFAS, RBI, SEBI, Nifty Indices returned 200) | NSE prices and the HDFC Mid Cap disclosure may need alternative sources, or be marked unavailable | 01-data | OPEN |
 | R-3 | `in_Valuation_Date`, `in_Price_Date` and `in_Risk_Free_Rate` are blank | A production valuation can't run until they are set from 01-data's sourced data | 00-main | OPEN, waiting on 01-data |
 
@@ -161,6 +161,7 @@ Change requests live in `spec/change_requests/`, findings in `qa/findings/`.
 
 Newest first. One line per event: what changed, the commit, the evidence.
 
+- **2026-10-25.** With the user's approval, all four `wave1/*` branches were pushed and verified with `git ls-remote`: 01, 02 and 05 at `f752ee1`, 03 at `88a3998`. Workers were told to push their own branch after every commit.
 - **2026-10-25.** `tracker.md` and `AGENTS.md` added (handover for any agent tool); both registered to 00-main in `spec/ownership.toml`.
 - **2026-10-25.** `.claude/worktrees/` (agent worktrees) added to `.gitignore`; `d60f7b6` pushed.
 - **2026-10-25.** Wave 1 launched: 01-data, 02-valuation, 03-nav and 05-qa, each in its own worktree on `wave1/<id>`, from `f752ee1`. Network probe: see R-2.
