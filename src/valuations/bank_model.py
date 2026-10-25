@@ -44,6 +44,10 @@ RATE_STEPS = (-0.01, -0.005, 0.0, 0.005, 0.01)               # contract §10 TV-
 GROWTH_STEPS = (-0.01, -0.005, 0.0, 0.005, 0.01)             # g +/-100 bp
 ROE_STEPS = (-0.02, -0.01, 0.0, 0.01, 0.02)                  # ROE_T +/-200 bp
 PROBABILITIES_NOT_ENTERED = "NOT ENTERED"                    # blank by default; never invented (§8)
+BRIDGE_HORIZON_FAIL = "FAIL: valuation date after the last forecast year end"
+ER_HORIZON_FAIL = "FAIL: exit date beyond the forecast horizon"
+ER_NO_EXIT_PB = "MISSING: Exit P/B not entered"
+ER_NO_PRICE = "MISSING: market price"
 
 
 def add_months(d: date, months: int) -> date:
@@ -189,11 +193,11 @@ def _expected_return(case: CaseInputs, proj: Sequence[BankProjectionYear], bv_pa
             frac = (t_exit - bounds[k]).days / (bounds[k + 1] - bounds[k]).days
             bvps_t = bv_path[k] + eps[k] * frac
     if bvps_t is None:
-        status = "FAIL: exit date beyond the forecast horizon"
+        status = ER_HORIZON_FAIL
     elif case.exit_pb is None:
-        status = CR.MISSING.value + ": Exit P/B not entered"
+        status = ER_NO_EXIT_PB
     elif inp.price is None:
-        status = CR.MISSING.value + ": market price"
+        status = ER_NO_PRICE
     else:
         exit_value = bank_exit_value(case.exit_pb, bvps_t)
     flows: tuple[float, ...] = ()
@@ -212,6 +216,8 @@ def _expected_return(case: CaseInputs, proj: Sequence[BankProjectionYear], bv_pa
 def _run_case(name: str, case: CaseInputs, inp: BankModelInputs, r: float | None, bv0: float | None,
               peer_value: float | None) -> CaseResult | None:
     if not _ready(case.drivers, inp.base, r, bv0, inp.anchor_date, inp.valuation_date):
+        return None
+    if inp.valuation_date < inp.anchor_date:
         return None
     if len(case.drivers) != len(inp.fy_ends):
         raise ValuationError(f"{name}: {len(case.drivers)} driver years for {len(inp.fy_ends)} forecast years")
@@ -302,7 +308,7 @@ def run_bank_model(inp: BankModelInputs) -> BankModelResult:
                                    anchor_max_age_days=inp.anchor_max_age_days)
             bridge_status = CR.PASS.value
         except ValuationError:
-            bridge_status = CR.FAIL.value
+            bridge_status = BRIDGE_HORIZON_FAIL
     tv_share = base_case.ri.terminal_value_share if base_case and base_case.ri else None
     tflag = base_case.terminal_flag if base_case else CR.MISSING.value
     coverage = (CoverageStatus.MODEL_VALUED.value if all(fvs[c] is not None for c in CASES)
