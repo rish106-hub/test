@@ -1,0 +1,5 @@
+Assumption_ID,Scope,Case,Parameter,Period,Value,Unit,Assumption_Source_Type,Source_ID,Rationale
+A-GLOBAL-All-W_RI-ALL,GLOBAL,All,W_RI,ALL,1,decimal,User assumption,,"D-009 default: 100% weight on the primary method, Residual Income (R004, contract §3.8). Changing it is a user assumption logged in MODEL_GOVERNANCE."
+A-GLOBAL-All-W_DDM-ALL,GLOBAL,All,W_DDM,ALL,0,decimal,User assumption,,"D-009 default: DDM is a cross-check shown beside RI, not blended (contract §3.8)."
+A-GLOBAL-All-W_JPB-ALL,GLOBAL,All,W_JPB,ALL,0,decimal,User assumption,,"D-009 default: justified P/B is a single-stage cross-check, not blended (contract §3.8)."
+A-GLOBAL-All-W_PEER_PB-ALL,GLOBAL,All,W_PEER_PB,ALL,0,decimal,User assumption,,"D-009 default: peer-relative P/B stays a cross-check with weight 0 until 04-charts delivers peer groups after gate G1 (D-028)."
