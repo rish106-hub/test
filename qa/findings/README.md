@@ -19,3 +19,4 @@ Each finding gives its severity (blocker/major/minor), owner, reproduction, expe
 | [F-012](F-012.md) | major | 00-main (contract/module contracts); affects 02-valuation | QA cannot recompute the bank valuation from the workbook or the data: no reference-input interface |
 | [F-013](F-013.md) | minor | 00-main | Valuation_Coverage_Total_Pct can be negative and unvalued weight above 100% |
 | [F-014](F-014.md) | minor | 00-main (build/main_sheets.py::_validation_checks) | Test-build watermark missing on VALIDATION_CHECKS |
+| [F-015](F-015.md) | major | 00-main (tests/test_common_module_contracts.py) | tests/test_common_module_contracts.py fails as soon as any worker fills in its MODULE.md |

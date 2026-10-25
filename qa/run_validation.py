@@ -48,13 +48,13 @@ PLANNED_MANUAL = [
      "no point-in-time data (raw_financials.Known_As_Of) exists yet; look-ahead and survivorship cannot be assessed"),
 ]
 
-_ID = re.compile(r"^test_((?:[A-Z]+_)*?[A-Z]+)_(\d+[a-z]?)(?:_|$)")
+_ID = re.compile(r"^test_((?:[A-Z]+_)*?[A-Z]+)_(\d+[a-z]?(?:_\d+[a-z]?)?)(?:_|$)")
 
 
 def check_id(name: str, param: str | None) -> str:
     base = name.split("[", 1)[0]
     m = _ID.match(base)
-    cid = f"{m.group(1).replace('_', '-')}-{m.group(2)}" if m else base.removeprefix("test_")
+    cid = f"{m.group(1).replace('_', '-')}-{m.group(2).replace('_', '-')}" if m else base.removeprefix("test_")
     return f"{cid}[{param}]" if param else cid
 
 
