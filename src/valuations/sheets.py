@@ -31,9 +31,9 @@ from src.valuations.reference import METHODOLOGY_VERSION, csv_value, unvalued_ro
 WAVE_1_SHEETS = ("VAL_HDFC_BANK",)
 NAMED_VAL_SHEETS = ("VAL_HDFC_BANK", "VAL_FEDERAL_BANK", "VAL_AU_SFB", "VAL_INDIAN_BANK", "VAL_ICICI_BANK",
                     "VAL_KOTAK_BANK", "VAL_MAX_FINANCIAL")
-# Peer-relative links tbl_PeerSummary, which 04-charts builds after gate G1 (D-028). Until then the
-# table exists only as a stub in an isolated test build; linking it in an integrated or production
-# build would leave an unresolved reference. Set to True when 04-charts delivers tbl_PeerSummary.
+# Peer-relative links tbl_PeerSummary, which 04-charts builds after gate G1 (D-028). A test build
+# always has it, real or stubbed (D-030); a production build never stubs, so linking it there before
+# 04-charts delivers would leave an unresolved reference. Set to True when 04-charts delivers.
 PEERS_DELIVERED = False
 REFERENCE_CSV = "reference_valuation_outputs.csv"
 CELL_MAP_JSON = "valuation_cell_map.json"
@@ -48,7 +48,7 @@ def build_sheets(ctx: WorkbookContext, data) -> None:
     isolated = _isolated_test_build(ctx)
     if isolated:
         augment_test_fixtures(data)          # pending CR-02-valuation-001
-    link_peers = PEERS_DELIVERED or isolated
+    link_peers = PEERS_DELIVERED or ctx.test_build
     g = global_inputs(data.rows("global_inputs"))
     registry = data.rows("security_registry")
     built: dict[str, BuiltSheet] = {}
