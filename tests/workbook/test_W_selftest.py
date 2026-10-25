@@ -67,3 +67,52 @@ def test_W_SELF_01_scanners_catch_seeded_violations(broken):
                W.test_W_17_shocks_are_read_once):
         _must_fail(fn, broken)
     assert broken.value("MF_NAV_CALCULATOR", "A2") == 0     # the WI-7 hazard itself: INDEX of a blank is 0
+
+
+# --------------------------------------------------------------------------- value comparisons
+def _synth(tmp_path_factory, name, mutate=None):
+    from build.recalc import recalc
+    from tests.workbook import qa_synth_wb
+    d = tmp_path_factory.mktemp(name)
+    p = qa_synth_wb.build(d / "synth.xlsx", mutate)
+    return Workbook(p, recalc(p, d / "recalc"), d)
+
+
+def _run(fn, wb):
+    try:
+        fn(wb, lambda *a: None)
+        return True
+    except AssertionError:
+        return False
+
+
+def test_W_SELF_02_value_checks_pass_on_a_correct_workbook_and_fail_on_mutants(tmp_path_factory):
+    """Positive control: a value-only workbook holding the hand-derived T-NAV results passes W-03a/c,
+    W-11, W-12, W-14a, W-16, W-18. Negative controls: one wrong number or caption fails W-03."""
+    from tests.workbook import test_W_values as V
+    good = _synth(tmp_path_factory, "good")
+    for fn in (V.test_W_03a_price_controls_equal_cleanroom, V.test_W_03c_nav_summary_equals_cleanroom,
+               V.test_W_11_reset_identity_at_default_controls, V.test_W_14a_tv_share_present_for_every_valued_security,
+               V.test_W_12_dashboard_shows_coverage_unvalued_and_date_warnings, V.test_W_16_units_rederived,
+               V.test_W_18_three_quality_measures_separate_no_composite):
+        assert _run(fn, good), fn.__name__
+
+    def bear_off(navs, pcs):
+        if navs:
+            navs[0]["Fair_NAV_Bear"] += 1e-6
+
+    def caption(navs, pcs):
+        if navs:
+            navs[2]["Coverage_Caption"] = navs[2]["Coverage_Caption"].replace("100.0%", "100%")
+
+    def tpp(navs, pcs):
+        if pcs:
+            pcs[0]["Target_Purchase_Price"] = pcs[0]["Model_FV_Base"]          # MoS not applied
+
+    def scen(navs, pcs):
+        if navs:
+            navs[1]["Scenario_Market_NAV"] *= 0.999                            # identity broken at defaults
+    assert not _run(V.test_W_03c_nav_summary_equals_cleanroom, _synth(tmp_path_factory, "m1", bear_off))
+    assert not _run(V.test_W_03c_nav_summary_equals_cleanroom, _synth(tmp_path_factory, "m2", caption))
+    assert not _run(V.test_W_03a_price_controls_equal_cleanroom, _synth(tmp_path_factory, "m3", tpp))
+    assert not _run(V.test_W_11_reset_identity_at_default_controls, _synth(tmp_path_factory, "m4", scen))
