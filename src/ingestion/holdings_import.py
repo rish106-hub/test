@@ -99,12 +99,13 @@ def _parse_ppfas(rows: Sequence[tuple]) -> tuple[list[dict], dict]:
     section = ""
     sub = ""
     grand = None
-    for r in rows:
+    grand_row = None
+    for rn, r in enumerate(rows, start=1):
         r = tuple(r) + (None,) * 8
         a, b, c, d, e, f, g = (r[i] for i in range(7))
         name = _txt(b)
         if name.startswith("GRAND TOTAL"):
-            grand = _num(f)
+            grand, grand_row = _num(f), rn
             break
         if name in ("Equity & Equity related", "Equity & Equity related Foreign Investments",
                     "Money Market Instruments", "Others"):
@@ -128,24 +129,25 @@ def _parse_ppfas(rows: Sequence[tuple]) -> tuple[list[dict], dict]:
             continue
         isin = _txt(c)
         lines.append({
-            "section": section, "sub": sub, "code": _txt(a), "name": name,
+            "row": rn, "section": section, "sub": sub, "code": _txt(a), "name": name,
             "isin": isin if ISIN_RE.match(isin) else "", "industry": _clean_industry(d),
             "qty": _num(e), "mv_lakh": mv, "weight_disclosed": _num(g) if not isinstance(g, str) else None,
             "weight_text": _txt(g),
         })
-    return lines, {"net_assets_lakh": grand}
+    return lines, {"net_assets_lakh": grand, "grand_row": grand_row}
 
 
 def _parse_hdfc(rows: Sequence[tuple]) -> tuple[list[dict], dict]:
     lines: list[dict] = []
     section = ""
     grand = None
-    for r in rows:
+    grand_row = None
+    for rn, r in enumerate(rows, start=1):
         r = tuple(r) + (None,) * 10
         b, d, e, f, g, h = (r[i] for i in (1, 3, 4, 5, 6, 7))
         head = _txt(b)
         if head.startswith("Grand Total"):
-            grand = _num(g)
+            grand, grand_row = _num(g), rn
             break
         if head in ("EQUITY & EQUITY RELATED", "MONEY MARKET INSTRUMENTS", "OTHERS"):
             section = head
@@ -158,12 +160,12 @@ def _parse_hdfc(rows: Sequence[tuple]) -> tuple[list[dict], dict]:
         if not name:
             continue
         lines.append({
-            "section": section, "sub": "", "code": "", "name": name, "isin": isin,
+            "row": rn, "section": section, "sub": "", "code": "", "name": name, "isin": isin,
             "industry": _clean_industry(e), "qty": _num(f), "mv_lakh": mv,
             "weight_disclosed": (_num(h) / 100.0) if _num(h) is not None else None,
             "weight_text": _txt(h),
         })
-    return lines, {"net_assets_lakh": grand}
+    return lines, {"net_assets_lakh": grand, "grand_row": grand_row}
 
 
 def _classify(fund_id: str, ln: dict) -> tuple[str, str]:
@@ -262,7 +264,7 @@ def parse_disclosure(fund_id: str, path: Path, source_id: str, import_batch_id: 
 def disclosed_totals(fund_id: str, path: Path) -> dict:
     """Reported scheme net assets (INR crore), portfolio date and the AMC's own printed weights."""
     pdate, lines, totals = read_disclosure(fund_id, Path(path))
-    return {"portfolio_date": pdate, "net_assets_lakh": totals["net_assets_lakh"],
+    return {"portfolio_date": pdate, "net_assets_lakh": totals["net_assets_lakh"], "grand_row": totals["grand_row"],
             "net_assets_cr": lakh_to_crore(totals["net_assets_lakh"]), "lines": lines}
 
 

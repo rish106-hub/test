@@ -1,0 +1,5 @@
+Plan_ID,Fund_ID,Scheme_Name,AMC,Plan,Option,AMFI_Scheme_Code,Benchmark_Name,Benchmark_Is_TRI,Source_ID,Data_Status
+MF001-DIR-GR,MF001,Parag Parikh Flexi Cap Fund,PPFAS Mutual Fund,Direct,Growth,122639,Nifty 500 (TRI),TRUE,SRC-000011,Retrieved and verified
+MF001-REG-GR,MF001,Parag Parikh Flexi Cap Fund,PPFAS Mutual Fund,Regular,Growth,122640,Nifty 500 (TRI),TRUE,SRC-000012,Retrieved and verified
+MF002-DIR-GR,MF002,HDFC Mid Cap Fund,HDFC Mutual Fund,Direct,Growth,118989,NIFTY Midcap 150 TRI,TRUE,SRC-000013,Retrieved and verified
+MF002-REG-GR,MF002,HDFC Mid Cap Fund,HDFC Mutual Fund,Regular,Growth,105758,NIFTY Midcap 150 TRI,TRUE,SRC-000014,Retrieved and verified
