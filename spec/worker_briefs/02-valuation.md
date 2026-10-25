@@ -16,9 +16,12 @@ Phase 2: one **complete, validated HDFC Bank valuation path**. That means histor
 
 ## Work
 
+**Wave 1 scope (D-028):** items 1–5 for HDFC Bank only, on real data, until gate G1 passes (`spec/worker_briefs/00-main.md`). Peer-relative stays a cross-check with weight 0 (D-009) until 04-charts delivers peers in Wave 2.
+
 1. **Reference functions.** Implement every stub in `src/valuations/`. `python -m pytest tests/contract/test_bank_valuation_contract.py tests/contract/test_insurance_contract.py tests/contract/test_returns_contract.py --strict-impl` must pass. Do not change the tests. If you think one is wrong, file a change request with your derivation.
 2. **Bank sheet template.** Write one generator function, e.g. `build_bank_sheet(ctx, security_id, data)`, that lays out a VAL_* sheet:
-   * header: IDs, business model, accounting basis, anchor date, valuation date, price (green link), data-status summary;
+   * header: IDs, business model, accounting basis, and the dates kept separate (contract §0.1: anchor date, latest results period end, price date, valuation date), price (green link), data-status summary;
+   * the **equity bridge** A → V (§3.1a): reported BVPS at A captioned "as of A", reported interim EPS, forecast stub EPS, dividends, and estimated BVPS at V captioned *estimate*; plus the interim deviation flag and the freshness checks (§3.1b). Each feeds its `tbl_ValuationOutputs` column;
    * history block (≥10 FY and ≤20 quarters) with formulas over `tbl_RawFinancials`, feeding `tbl_HistoricalMetrics` with `Is_Forecast = FALSE`;
    * a driver input block per case (Bear/Base/Bull), in blue cells sourced from `assumptions.csv`; every driver row needs a `Rationale` and a source type;
    * projection (§3.6), RI (§3.2), DDM (§3.3), justified P/B (§3.4), peer-relative (§3.5, linking `tbl_PeerSummary`), blend (§3.8), roll-forward (§3.1);
@@ -29,7 +32,7 @@ Phase 2: one **complete, validated HDFC Bank valuation path**. That means histor
 3. **VALUATION_OUTPUTS.** One row per registry security. Rows for securities with a model link to that sheet's `out_*` names. Every other security gets `UNVALUED` with blank FVs (R009), never 0. **VALUATION_ASSUMPTIONS** renders `tbl_Assumptions`.
 4. **Develop on fixtures first.** `python build/generate_workbook.py --test-build --only 02-valuation` puts synthetic security S90001 on VAL_HDFC_BANK with stubbed peers. Recalculate it (`build/recalc.py`) and write `tests/valuations/test_sheet_matches_reference.py`, which checks that every `out_*` value equals your Python reference to 1e-9. When 01-data's real data lands (merge the integration branch), switch HDFC Bank to real inputs.
 5. **Assumptions are evidence-led** (spec `<persona>`). Base drivers come from reported history and cited management guidance. Bear and Bull are full alternative driver sets (D-008). ERP, β and exit P/B are user assumptions with written reasoning in `assumptions.csv` and a `MODEL_GOVERNANCE` change request. Never invent consensus or scenario probabilities.
-6. **Replicate** the template to Federal, AU SFB, Indian Bank, ICICI and Kotak with their own data and drivers. **Max Financial**: SOTP (§4) on VAL_MAX_FINANCIAL, using Method A or B per case, never both. Stake %, EV and VNB come from filings via 01-data.
+6. **Wave 2, only after gate G1 (D-028).** **Replicate** the template to Federal, AU SFB, Indian Bank, ICICI and Kotak with their own data and drivers. **Max Financial**: SOTP (§4) on VAL_MAX_FINANCIAL, using Method A or B per case, never both. Stake %, EV and VNB come from filings via 01-data.
 7. **`reports/valuation/<company>.md`**: key drivers, the sensitivity of the value to them, method limitations, data gaps.
 
 ## Rules
@@ -40,6 +43,7 @@ Phase 2: one **complete, validated HDFC Bank valuation path**. That means histor
 
 ## Done when
 
+- [ ] `python tools/check_module_contract.py 02-valuation --manifest build/out/manifest.json --run-tests` prints no REJECT, and `src/valuations/MODULE.md` is filled in
 - [ ] The contract tests above pass under `--strict-impl`
 - [ ] HDFC Bank: full path on real data. Excel equals Python for every `out_*`. TV share and flags shown. Sensitivity grid present
 - [ ] `tbl_ValuationOutputs` covers every registry security, with unvalued ones visible

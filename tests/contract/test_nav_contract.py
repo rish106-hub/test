@@ -5,7 +5,10 @@ import pytest
 
 from src.common.enums import CoverageStatus
 from src.fund_nav.classify import coverage_status
-from src.fund_nav.coverage import coverage_summary
+from datetime import date
+
+from src.common.enums import HoldingsMatchStatus
+from src.fund_nav.coverage import coverage_summary, freshness_summary, holdings_coverage, match_status
 from src.fund_nav.methods import (quantity_based_nav, reconcile_net_assets, scenario_market_nav,
                                   weighted_adjustment_nav)
 from tests.contract import cases as K
@@ -111,3 +114,57 @@ def test_T_NAV_13_selected_case_uses_selected_fair_value():
     lines = _with(K.MF001, "MF001-L1", selected_fv_inr=450.0)   # e.g. manual bias -10%
     r = weighted_adjustment_nav(80.0, lines, "Selected")
     assert r.nav == approx(80.0 * (1 + 0.3 * (450 / 750 - 1) + 0.2 * 0.2))   # 73.60
+
+
+# --- The three data-quality measures (contract §7.5, D-026) -------------------------------
+
+def test_T_NAV_14_holdings_coverage_full_snapshot():
+    h = holdings_coverage(K.MF001, K.MF001_REPORTED_NA, 0.005)
+    assert h.value_coverage_pct == approx(1.0)                # 1,000 Cr imported of 1,000 Cr reported
+    assert h.match_pct == approx(1.0)
+    assert h.unmatched_line_ids == ()
+    assert (h.recon_status, h.status) == ("PASS", "PASS")
+    assert match_status(K.MF001[0]) == HoldingsMatchStatus.MATCHED
+    assert match_status(K.MF001[3]) is None                   # ONA line
+
+
+def test_T_NAV_15_imported_but_unmarkable_lines_are_a_holdings_failure_not_a_valuation_one():
+    lines = _with(_with(K.MF001, "MF001-L3", price_inr=None), "MF001-L2", security_id=None)
+    assert match_status(lines[2]) == HoldingsMatchStatus.NO_PRICE
+    assert match_status(lines[1]) == HoldingsMatchStatus.UNMATCHED
+    assert coverage_status(lines[1]) == CoverageStatus.UNVALUED   # never MODEL_VALUED unless MATCHED
+    h = holdings_coverage(lines, K.MF001_REPORTED_NA, 0.005)
+    assert h.match_pct == approx(0.30 / 0.60)
+    assert h.unmatched_line_ids == ("MF001-L2", "MF001-L3")
+    assert h.value_coverage_pct == approx(1.0)                # everything was imported...
+    assert h.status == "FAIL"                                 # ...but not everything can be marked
+    short = holdings_coverage(K.MF001, 1010.0, 0.005)
+    assert short.value_coverage_pct == approx(1000.0 / 1010.0)
+    assert (short.recon_status, short.status) == ("FAIL", "FAIL")
+
+
+def _dated(l1, l2):
+    return _with(_with(K.MF001, "MF001-L1", financials_as_of=l1), "MF001-L2", financials_as_of=l2)
+
+
+def test_T_NAV_16_freshness_reports_each_date_separately():
+    V = date(2026, 10, 23)
+    f = freshness_summary(_dated(date(2026, 6, 30), date(2026, 3, 31)), date(2026, 9, 30), V, V,
+                          holdings_stale_days=45, financials_stale_days=135, nav_stale_days=3)
+    assert (f.holdings_age_days, f.nav_date_gap_days) == (23, 0)
+    assert f.max_financials_age_days == 206                   # L2: 2026-03-31 to 2026-10-23
+    assert f.stale_valued_weight_pct == approx(0.20)          # L1 is 115 days old, within 135
+    assert f.status == "STALE"
+    fresh = freshness_summary(_dated(date(2026, 6, 30), date(2026, 9, 30)), date(2026, 9, 30), V, V, 45, 135, 3)
+    assert (fresh.max_financials_age_days, fresh.stale_valued_weight_pct, fresh.status) == (115, 0.0, "PASS")
+
+
+def test_T_NAV_17_old_holdings_old_nav_or_undated_financials_are_stale():
+    V = date(2026, 10, 23)
+    ok = _dated(date(2026, 6, 30), date(2026, 9, 30))
+    assert freshness_summary(ok, date(2026, 8, 31), V, V, 45, 135, 3).status == "STALE"          # holdings 53 days
+    gap = freshness_summary(ok, date(2026, 9, 30), date(2026, 10, 16), V, 45, 135, 3)
+    assert (gap.nav_date_gap_days, gap.status) == (7, "STALE")
+    undated = freshness_summary(_dated(None, date(2026, 9, 30)), date(2026, 9, 30), V, V, 45, 135, 3)
+    assert undated.stale_valued_weight_pct == approx(0.30)    # an unknown date is never treated as fresh
+    assert undated.status == "STALE"

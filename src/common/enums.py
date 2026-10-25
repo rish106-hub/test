@@ -66,6 +66,13 @@ class CoverageStatus(StrEnum):
     UNVALUED = "UNVALUED"
 
 
+class HoldingsMatchStatus(StrEnum):
+    """contract §7.5a. Whether a disclosed POSITION line can be marked at in_Price_Date."""
+    MATCHED = "MATCHED"            # registry Security_ID and a price at in_Price_Date
+    UNMATCHED = "UNMATCHED"        # no registry Security_ID for the disclosed ISIN
+    NO_PRICE = "NO_PRICE"          # Security_ID known, no price at in_Price_Date
+
+
 class Sector(StrEnum):
     """spec <future_sector_coverage>. PSU is *not* a sector (spec <classification_rule>)."""
     FINANCIAL_SERVICES = "Financial Services"
@@ -175,4 +182,4 @@ class OutputLabel(StrEnum):
     FAIR_NAV = "Modelled Intrinsic Value per Unit (estimate, not official NAV)"
     SCENARIO_MARKET_NAV = "Scenario Market NAV (hypothetical prices, not official NAV)"
     HYPOTHETICAL_PORTFOLIO = "Hypothetical Rebalanced Portfolio Value (not an existing fund)"
-    TARGET_PURCHASE_PRICE = "Target Purchase Price (fair value less margin of safety; not a price forecast)"
+    TARGET_PURCHASE_PRICE = "Target Purchase Price (selected fair value less margin of safety; not a price forecast)"

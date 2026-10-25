@@ -18,7 +18,7 @@ You may read everything else but not edit it. Run `python tools/check_ownership.
 
 ## Work, in priority order
 
-The critical path is the phase-3 end-to-end test: HDFC Bank → an actual holding → a fund's estimated NAV. Do items 1–5 first.
+The critical path is the phase-3 end-to-end test: HDFC Bank → an actual holding → a fund's estimated NAV. Do items 1–5 first. **Wave 1 scope (D-028):** everything gate G1 needs (`spec/worker_briefs/00-main.md`): HDFC Bank's full source trail, including every interim result after the last annual balance sheet (contract §3.1a needs reported quarterly EPS and its period end), plus one complete, reconciled portfolio snapshot for **each** fund, with every holding that lacks adequate data listed in `missing_data.csv`. The other six companies follow in Wave 2.
 
 1. **Feasibility inventory** (`dataset_inventory.csv` + `reports/data/feasibility_report.md`). For every dataset below, actually try the retrieval from this environment and record the outcome: method, history available, latest date, licensing constraints, and what failed (HTTP status, proxy refusal, terms of use). Do not assume a paid API exists.
    * Each of the 7 companies: ~10 annual reports, ~20 quarterly results, investor presentations. For Max Financial, also the Axis Max Life EV, VNB, APE, solvency and stake.
@@ -43,6 +43,7 @@ The critical path is the phase-3 end-to-end test: HDFC Bank → an actual holdin
 
 ## Done when
 
+- [ ] `python tools/check_module_contract.py 01-data --manifest build/out/manifest.json --run-tests` prints no REJECT, and `src/ingestion/MODULE.md` is filled in
 - [ ] `python -m pytest tests/contract/test_ingestion_contract.py tests/ingestion --strict-impl` passes
 - [ ] Every canonical CSV you own validates in production mode
 - [ ] `reports/data/feasibility_report.md` lists every dataset as available / partial / unavailable, with evidence

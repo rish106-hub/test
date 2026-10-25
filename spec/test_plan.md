@@ -21,22 +21,25 @@ python -m pytest -m workbook          # tests that need LibreOffice
 
 ## C. Contract tests (hand-derived)
 
-Every expected value was computed by hand arithmetic, independently of any implementation. On 2026-10-25 they were checked to be mutually consistent and achievable by a throwaway implementation that passed all 63 under `--strict-impl`. That implementation was not committed.
+Every expected value was computed by hand arithmetic, independently of any implementation. On 2026-10-25 they were checked to be mutually consistent and achievable by a throwaway implementation that passed all of them under `--strict-impl` (63 in v1.0; re-run for the v1.1 additions T-PRC-10…12, T-BNK-11…15 and T-NAV-14…17). That implementation was not committed.
 
 ### Pricing controls: `test_pricing_contract.py` (03-nav, contract §6)
 
 | ID | Case | Expected |
 |---|---|---|
-| T-PRC-00 | All controls at default | Selected price 750, selected FV 500, label "Model output (unmodified)" |
+| T-PRC-00 | All controls at default | Selected price 750, selected FV 500, label "Model output (unmodified)", no control warning |
 | T-PRC-01 | Spec manual test 1: shock −10% on 750 | 675; FV still 500; inputs unchanged |
 | T-PRC-02 | Spec manual test 2: bias −10% on 500 with shock active | FV 450; price still 675; label contains "MANUALLY BIASED" |
-| T-PRC-03 | Spec manual test 3: absolute 595, with every shock also set | 595; FV 500; original 750 untouched |
-| T-PRC-04 | Derived outputs | upside 450/675−1 = −33.33%; FV gap 450/750−1 = −40%; target base 400, selected 360 at 20% MoS |
+| T-PRC-03 | Spec manual test 3: absolute 595, with every shock also set | 595; FV 500; original 750 untouched; warnings name the ignored shocks and bias |
+| T-PRC-04 | Derived outputs | upside 450/675−1 = −33.33%; FV gap 450/750−1 = −40%; Target Purchase Price 450 × 0.8 = 360 |
 | T-PRC-05 | Spec manual test 8: sector −5% compounding with security −10% | 750 × 0.9 × 0.95 = 641.25 |
-| T-PRC-06 | Shocks set but mode Original | selected 750; after-shock 641.25 is displayed but not selected |
+| T-PRC-06 | Shocks set but mode Original | selected 750; after-shock 641.25 is displayed but not selected; warning "Price shocks set but ignored" |
 | T-PRC-07 | Fundamental case Bear | 400 |
 | T-PRC-08 | Absolute mode, blank price | `None` (#N/A), status FAIL (D-014) |
-| T-PRC-09 | Unvalued security | price controls work; every FV output is blank; status UNVALUED |
+| T-PRC-09 | Unvalued security | price controls work; every FV output (TPP included) is blank; status UNVALUED |
+| T-PRC-10 | One TPP (D-023) | default 500 × 0.8 = 400; Bear case 400 × 0.8 = 320; a −30% price shock leaves it at 400 |
+| T-PRC-11 | Absolute 595 entered while mode is Market Price Shock −10% | 675 (the mode decides); warning "Absolute price set but ignored"; status OK |
+| T-PRC-12 | Shocks apply once, from the original price (D-024) | global −10% → 675 (not 607.5); global −10%, sector −5%, security +2% → 750 × 0.9 × 0.95 × 1.02 = 654.075 |
 
 ### Bank valuation: `test_bank_valuation_contract.py` (02-valuation, contract §2–3, §10)
 
@@ -52,6 +55,11 @@ Every expected value was computed by hand arithmetic, independently of any imple
 | T-BNK-07 | Peer P/B 2.5 × BVPS 400 with n = 5, 2, 0 | 1000 PASS; 1000 WARNING; None MISSING |
 | T-BNK-08 | Blend weights | 100; 95; None when a weighted method is missing; error when weights sum to 0.9 |
 | T-BNK-09 | TV flag at 80% vs 75% threshold; grid with g = r | WARNING; cell None |
+| T-BNK-11 | Equity bridge (§3.1a): BV_A 100 at 2026-03-31; EPS forecast FY2027 18, FY2028 20; Q1 4.4, Q2 4.6 reported; DPS 2 ex 2026-06-20; V 2026-10-25 | stub 18 × 25/365 = 1.23288; BV_V = 100 + 9 + 1.23288 − 2 = **108.23288**; interim deviation 9 / (18 × 183/365) − 1 = −0.27% PASS; ages 25 / 208 days, PASS |
+| T-BNK-12 | Only Q1 reported, EPS 3.0 | deviation 3 / (18 × 91/365) − 1 = −33.2% → Forecast_Update_Flag WARNING; BV_V = 100 + 3 + 18 × 117/365 − 2 = 106.76986 |
+| T-BNK-13 | No interim results | all forecast: BV_V = 100 + 18 × 208/365 − 2 = 108.25753; financials 208 days old > 135 → STALE |
+| T-BNK-14 | V 2027-06-10 with Q1–Q3 reported | stub crosses FYE: 18 × 90/365 + 20 × 71/366 = 8.31814; BV_V 119.81814; anchor 436 days > 425 → FAIL |
+| T-BNK-15 | V beyond the last forecast year end | ValuationError |
 | T-BNK-10 | One-year driver projection (§3.6): Adv 1000 → 1100, IEA ×1.5, NIM 4%, NonII 20 → 22, opex 40 → 42, credit cost 1%, tax 25%, payout 20%, 1e8 shares, equity 200 | NII 63; PPOP 43; provisions 10.5; PAT 24.375 Cr; EPS ₹2.4375; DPS ₹0.4875; equity 219.5; BVPS ₹21.95; ROE 24.375/209.75 |
 
 ### Insurance SOTP: `test_insurance_contract.py` (02-valuation, contract §4)
@@ -82,6 +90,10 @@ MF002: 500 Cr = S90002 100 + S90004 340 (USD 400 × FX 85; FV USD 440/380/500) +
 | T-NAV-11 | S90002 also becomes unvalued | equity coverage 50%; FAIL |
 | T-NAV-12 | Reconciliation vs 1,000 and vs 1,010 | gap 0 PASS; −0.99% FAIL |
 | T-NAV-13 | Selected case with a biased FV of 450 | 80 × (1 − 0.12 + 0.04) = 73.60 |
+| T-NAV-14 | (1) Holdings coverage, full snapshot | value coverage 1,000/1,000 = 100%; match 100%; PASS |
+| T-NAV-15 | L3 has no price, L2 has no Security_ID | match 0.30/0.60 = 50%; unmatched L2, L3; value coverage still 100%; FAIL. L2 is UNVALUED, never MODEL_VALUED. Reported 1,010: value coverage 99.0%, recon FAIL |
+| T-NAV-16 | (3) Freshness at V = price date = NAV date 2026-10-23, portfolio 2026-09-30; L1 financials 2026-06-30, L2 2026-03-31 | holdings 23 days; NAV gap 0; oldest valued financials 206 days; stale valued weight 20%; STALE. With L2 at 2026-09-30: 115 days, 0%, PASS |
+| T-NAV-17 | Portfolio 2026-08-31 (53 days); NAV dated 7 days before V; L1 financials undated | each alone → STALE; an undated MODEL_VALUED line counts as stale (30%) |
 
 ### Custom allocation, hypothetical portfolio, overlap: `test_allocation_contract.py` (03-nav)
 
@@ -129,6 +141,9 @@ Run against `build/out/*.xlsx` after `build/recalc.py`. Every W test writes a ro
 | W-14 | Terminal controls: no Gordon cell with g ≥ r shows a number; TV share is present for every valued security | recalc |
 | W-15 | Blank propagation: every cross-table link whose source column can be blank uses `link_patterns.blank_safe` | formula scan |
 | W-16 | Units: a sample of `MV_Mkt_INR_Cr` re-derived from quantity × price / 1e7; per-share values re-derived from crore / shares | recalc |
+| W-17 | Shocks apply once (D-024): `in_Global_Price_Shock_Pct`, `tbl_SectorShocks` and `Market_Price_Shock_Pct` are referenced only by `tbl_PriceControls[Effective_Shock_Pct]`; every downstream scenario price links to `Selected_Scenario_Market_Price` | formula dependency scan |
+| W-18 | The three data-quality measures (D-026) appear separately on EXECUTIVE_DASHBOARD for every plan, each with its own status; no composite score exists | value scan |
+| W-19 | Dates: every `BV_Reported_At_Anchor_INR` display carries "as of <Anchor_Date>"; every value derived for V is captioned "estimate" (D-025) | label scan |
 
 ## I. Independent re-implementation (05-qa)
 

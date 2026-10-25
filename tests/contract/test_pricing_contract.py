@@ -20,6 +20,7 @@ def test_T_PRC_00_defaults_are_identity():
     assert out.effective_shock_pct == 0.0
     assert out.fv_label == "Model output (unmodified)"
     assert out.control_status == "OK"
+    assert out.control_warning == ""
 
 
 def test_T_PRC_01_market_shock_minus_10pct_gives_675_and_leaves_fair_value():
@@ -50,6 +51,8 @@ def test_T_PRC_03_absolute_595_overrides_market_price_only():
     assert out.selected_scenario_fair_value == 500.0             # FV mode still Model Base
     assert out.fair_value_after_bias == approx(450.0)            # computed, but not selected
     assert inp.original_market_price == 750.0
+    assert "Price shocks set but ignored" in out.control_warning      # §6.2: never silently dropped
+    assert "Fair-value bias set but ignored" in out.control_warning
 
 
 def test_T_PRC_04_derived_outputs():
@@ -58,8 +61,8 @@ def test_T_PRC_04_derived_outputs():
     out = resolve_controls(inp)
     assert out.implied_upside_to_fair_value == approx(450.0 / 675.0 - 1)   # -0.3333
     assert out.fair_value_gap == approx(450.0 / 750.0 - 1)                 # -0.40, vs ORIGINAL price
-    assert out.target_purchase_price_base == approx(400.0)                 # 500 x 0.8
-    assert out.target_purchase_price_selected == approx(360.0)             # 450 x 0.8
+    assert out.target_purchase_price == approx(360.0)                      # selected FV 450 x 0.8 (D-023)
+    assert out.control_warning == ""
 
 
 def test_T_PRC_05_shocks_compound_multiplicatively():
@@ -75,6 +78,7 @@ def test_T_PRC_06_shocks_inactive_in_original_mode():
     out = resolve_controls(inp)
     assert out.selected_scenario_market_price == 750.0
     assert out.market_price_after_shock == approx(641.25)  # still shown, not selected
+    assert "Price shocks set but ignored" in out.control_warning
 
 
 def test_T_PRC_07_fundamental_case_selects_model_case_value():
@@ -98,6 +102,33 @@ def test_T_PRC_09_unvalued_security_keeps_price_controls_and_blank_fair_values()
     out = resolve_controls(inp)
     assert out.selected_scenario_market_price == approx(675.0)
     assert out.selected_scenario_fair_value is None
-    assert out.target_purchase_price_base is None
+    assert out.target_purchase_price is None
     assert out.implied_upside_to_fair_value is None
     assert out.control_status == "UNVALUED"
+
+
+def test_T_PRC_10_target_purchase_price_follows_the_selected_fair_value_only():
+    """D-023: one TPP. At default controls it equals Model_FV_Base x (1 - MoS)."""
+    assert resolve_controls(BASE).target_purchase_price == approx(400.0)                      # 500 x 0.8
+    bear = resolve_controls(dataclasses.replace(BASE, fair_value_mode=F.FUNDAMENTAL, fundamental_case=Case.BEAR))
+    assert bear.target_purchase_price == approx(320.0)                                       # 400 x 0.8
+    shocked = resolve_controls(dataclasses.replace(BASE, market_price_mode=M.SHOCK, market_price_shock_pct=-0.30))
+    assert shocked.target_purchase_price == approx(400.0)        # a market-price shock never moves the TPP
+
+
+def test_T_PRC_11_absolute_price_entered_in_shock_mode_is_ignored_and_flagged():
+    inp = dataclasses.replace(BASE, market_price_mode=M.SHOCK, market_price_shock_pct=-0.10,
+                              absolute_scenario_price=595.0)
+    out = resolve_controls(inp)
+    assert out.selected_scenario_market_price == approx(675.0)   # the mode decides, not the presence of a value
+    assert "Absolute price set but ignored" in out.control_warning
+    assert out.control_status == "OK"
+
+
+def test_T_PRC_12_global_shock_applies_once_from_the_original_price():
+    inp = dataclasses.replace(BASE, market_price_mode=M.SHOCK, global_shock_pct=-0.10)
+    out = resolve_controls(inp)
+    assert out.effective_shock_pct == approx(-0.10)
+    assert out.market_price_after_shock == approx(675.0)         # 750 x 0.9, not 750 x 0.9 x 0.9
+    all_three = resolve_controls(dataclasses.replace(inp, sector_shock_pct=-0.05, market_price_shock_pct=0.02))
+    assert all_three.market_price_after_shock == approx(750.0 * 0.90 * 0.95 * 1.02)   # 654.075

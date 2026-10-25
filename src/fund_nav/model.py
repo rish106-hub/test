@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 
 from src.common.enums import AssetClass, CoverageStatus, LineRole, Sector
 
@@ -20,6 +21,7 @@ class HoldingLine:
     fv_inr: dict[str, float | None] = field(default_factory=dict)   # {"Base"|"Bear"|"Bull": FV INR}
     scenario_price_inr: float | None = None   # Selected_Scenario_Market_Price
     selected_fv_inr: float | None = None      # Selected_Scenario_Fair_Value
+    financials_as_of: date | None = None      # issuer's Latest_Results_Period_End (MODEL_VALUED lines)
 
 
 @dataclass(frozen=True)
@@ -50,3 +52,23 @@ class CoverageResult:
     unvalued_value_inr_cr: float
     status: str     # PASS | WARNING | FAIL
     caption: str    # "Covers X% of equity; Y% of net assets unvalued (adjustment 0)"
+
+
+@dataclass(frozen=True)
+class HoldingsCoverageResult:
+    """Contract §7.5a. Is the official portfolio fully imported and markable?"""
+    value_coverage_pct: float      # Σ disclosed line values / reported scheme net assets
+    match_pct: float               # Σ w (MATCHED POSITION lines) / Σ w (POSITION lines)
+    unmatched_line_ids: tuple[str, ...]
+    recon_status: str              # PASS | FAIL (§7.3 tolerance)
+    status: str                    # PASS | FAIL
+
+
+@dataclass(frozen=True)
+class FreshnessResult:
+    """Contract §7.5c. Ages are in days to in_Valuation_Date."""
+    holdings_age_days: int
+    nav_date_gap_days: int
+    max_financials_age_days: int | None    # None when no line is MODEL_VALUED
+    stale_valued_weight_pct: float         # Σ w of MODEL_VALUED lines on stale financials
+    status: str                            # PASS | STALE

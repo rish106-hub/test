@@ -359,6 +359,8 @@ One CSV for all funds; the workbook splits it into one table per Fund_ID (tbl_Ho
 | `Selected_Scenario_Price` | float | INR |  | workbook_link |  |
 | `Base_Fair_Value` | float | INR |  | workbook_link |  |
 | `Scenario_Fair_Value` | float | INR |  | workbook_link |  |
+| `Holdings_Match_Status` | str |  |  | workbook_calc | MATCHED · UNMATCHED · NO_PRICE; contract §7.5a: POSITION lines only; blank for ONA lines |
+| `Financials_As_Of` | date |  |  | workbook_link | tbl_ValuationOutputs[Latest_Results_Period_End]; MODEL_VALUED lines only (§7.5c) |
 | `Valuation_Coverage_Status` | str |  |  | workbook_calc | MODEL_VALUED · CARRYING_VALUE · MARKET_PASS_THROUGH · UNVALUED |
 | `Adj_Base` | float | decimal |  | workbook_calc | contract §7.2 Adj_i |
 | `Adj_Bear` | float | decimal |  | workbook_calc |  |
@@ -494,7 +496,16 @@ THE interface between valuation and NAV. Workbook rows link (green) to VAL_* nam
 |---|---|---|---|---|---|
 | `Security_ID` | str |  | ✓ | stored |  |
 | `Valuation_Date` | date |  | ✓ | stored |  |
-| `Anchor_Date` | date |  | ✓ | stored |  |
+| `Anchor_Date` | date |  | ✓ | stored | A: period end of the reported balance sheet behind BV_0 (contract §3.1) |
+| `Latest_Results_Period_End` | date |  |  | stored | R: end of the latest reported earnings period, interim included (§3.1a) |
+| `Price_Date` | date |  | ✓ | stored | in_Price_Date of the market price compared |
+| `BV_Reported_At_Anchor_INR` | float | INR |  | stored | Historical: reported BVPS at Anchor_Date. Never relabelled as current |
+| `BV_Estimated_At_Valuation_INR` | float | INR |  | stored | Estimate: equity bridge A -> V (§3.1a) |
+| `Interim_EPS_Deviation_Pct` | float | decimal |  | stored | §3.1a; blank when no interim results after A |
+| `Forecast_Update_Flag` | str |  |  | stored | PASS · WARNING · FAIL · MISSING · STALE · NOT RUN; §3.1a |
+| `Financials_Age_Days` | int | days |  | stored | Valuation_Date - Latest_Results_Period_End |
+| `Anchor_Age_Days` | int | days |  | stored | Valuation_Date - Anchor_Date |
+| `Freshness_Status` | str |  |  | stored | PASS · WARNING · FAIL · MISSING · STALE · NOT RUN; §3.1b |
 | `Primary_Method` | str |  | ✓ | stored | Residual Income · Dividend Discount · Justified P/B · Peer-relative P/B · Peer-relative P/ABV · Peer-relative P/E · Insurance SOTP · FCFF DCF (WACC) · FCFE · EV multiple · None |
 | `Secondary_Methods` | str |  |  | stored | Semicolon-separated ValuationMethod values |
 | `FV_Base_INR` | float | INR |  | stored |  |
@@ -649,10 +660,10 @@ contract §6. One row per registry security.
 | `Selected_Scenario_Fair_Value` | float | INR |  | workbook_calc |  |
 | `Implied_Upside_To_Fair_Value` | float | decimal |  | workbook_calc |  |
 | `Fair_Value_Gap` | float | decimal |  | workbook_calc |  |
-| `Target_Purchase_Price_Base` | float | INR |  | workbook_calc |  |
-| `Target_Purchase_Price_Selected` | float | INR |  | workbook_calc |  |
+| `Target_Purchase_Price` | float | INR |  | workbook_calc | Selected_Scenario_Fair_Value x (1 - margin of safety); the only TPP (D-023) |
 | `FV_Label` | str |  |  | workbook_calc |  |
 | `Control_Status` | str |  |  | workbook_calc |  |
+| `Control_Warning` | str |  |  | workbook_calc | Names inputs that are set but ignored by the selected mode (§6.2); blank otherwise |
 
 ### nav_summary
 
@@ -682,17 +693,26 @@ One row per Plan_ID. Headline fair NAV = Method 1 (contract §7.2); Method 2 sho
 | `Scenario_Market_NAV` | float | INR |  | stored |  |
 | `Diff_vs_Official_INR` | float | INR |  | stored |  |
 | `Diff_vs_Official_Pct` | float | decimal |  | stored |  |
-| `Coverage_Total_Pct` | float | decimal |  | stored |  |
-| `Coverage_Equity_Pct` | float | decimal |  | stored |  |
+| `Price_Date` | date |  |  | stored |  |
+| `Valuation_Date` | date |  |  | stored |  |
+| `Holdings_Value_Coverage_Pct` | float | decimal |  | stored |  |
+| `Holdings_Match_Pct` | float | decimal |  | stored |  |
+| `Unmatched_Count` | int |  |  | stored |  |
+| `Recon_Gap_Pct` | float | decimal |  | stored |  |
+| `Recon_Status` | str |  |  | stored | PASS · WARNING · FAIL · MISSING · STALE · NOT RUN |
+| `Holdings_Coverage_Status` | str |  |  | stored | PASS · WARNING · FAIL · MISSING · STALE · NOT RUN |
+| `Valuation_Coverage_Total_Pct` | float | decimal |  | stored |  |
+| `Valuation_Coverage_Equity_Pct` | float | decimal |  | stored |  |
 | `Unvalued_Weight_Pct` | float | decimal |  | stored |  |
 | `Unvalued_Count` | int |  |  | stored |  |
 | `Unvalued_Value_INR_Cr` | float | INR_Cr |  | stored |  |
-| `Coverage_Status` | str |  |  | stored | PASS · WARNING · FAIL · MISSING · STALE · NOT RUN |
+| `Valuation_Coverage_Status` | str |  |  | stored | PASS · WARNING · FAIL · MISSING · STALE · NOT RUN |
 | `Coverage_Caption` | str |  |  | stored |  |
-| `Holdings_Age_Days` | int |  |  | stored |  |
-| `Holdings_Date_Status` | str |  |  | stored | PASS · WARNING · FAIL · MISSING · STALE · NOT RUN |
-| `Recon_Gap_Pct` | float | decimal |  | stored |  |
-| `Recon_Status` | str |  |  | stored | PASS · WARNING · FAIL · MISSING · STALE · NOT RUN |
+| `Holdings_Age_Days` | int | days |  | stored |  |
+| `NAV_Date_Gap_Days` | int | days |  | stored |  |
+| `Max_Financials_Age_Days` | int | days |  | stored |  |
+| `Stale_Valued_Weight_Pct` | float | decimal |  | stored |  |
+| `Freshness_Status` | str |  |  | stored | PASS · WARNING · FAIL · MISSING · STALE · NOT RUN |
 | `Method_Drift_INR` | float | INR |  | stored |  |
 
 ### custom_allocation

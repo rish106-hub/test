@@ -18,7 +18,7 @@ These are the **only** things a module may reference in another module's sheets.
 
 | Interface | Built by | Sheet | Consumed by | Key |
 |---|---|---|---|---|
-| `in_*` (18 global inputs) | 00-main | GLOBAL_ASSUMPTIONS | all | — |
+| `in_*` (21 global inputs) | 00-main | GLOBAL_ASSUMPTIONS | all | — |
 | `tbl_Registry` | 01-data | MASTER_SECURITY_REGISTRY | 02, 03, 04 | Security_ID |
 | `tbl_MarketPrices` | 01-data | MARKET_PRICES | 02, 03, 04 | Security_ID + Price_Date |
 | `tbl_RawFinancials` | 01-data | RAW_FINANCIAL_DATA | 02, 04 | Observation_ID |
@@ -57,7 +57,8 @@ These are the **only** things a module may reference in another module's sheets.
 | `PC_MODEL_FV[case]` | `tbl_PriceControls[Model_FV_Base/Bear/Bull]` | blank-safe link to `tbl_ValuationOutputs[FV_<case>_INR]` |
 | `H_CURRENT_PRICE` | holdings `Current_Market_Price` | `""` for ONA lines; `#N/A` for a POSITION whose Security_ID has no price-control row (WI-6) |
 | `H_BASE_FV` | holdings `Base_Fair_Value` | blank-safe link to `tbl_PriceControls[Model_FV_Base]` |
-| `H_COVERAGE_STATUS` | holdings `Valuation_Coverage_Status` | contract §7.0 classification |
+| `H_MATCH_STATUS` | holdings `Holdings_Match_Status` | contract §7.5a: `MATCHED`, `UNMATCHED` (no price-control row) or `NO_PRICE` (blank price); blank for ONA lines |
+| `H_COVERAGE_STATUS` | holdings `Valuation_Coverage_Status` | contract §7.0 classification; a line that is not `MATCHED` is `UNVALUED` even if a fair value exists |
 | `H_ADJ_BASE` | holdings `Adj_Base` | contract §7.2 `w × (FV/P − 1)` for MODEL_VALUED lines, else 0 |
 | `H_MV_MKT` | holdings `MV_Mkt_INR_Cr` | `q × P / 1e7` for positions, disclosed value for ONA lines |
 

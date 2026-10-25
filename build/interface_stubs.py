@@ -17,6 +17,8 @@ INTERFACE_TABLES = [
     (S.SECURITY_REGISTRY, "tbl_Registry", "MASTER_SECURITY_REGISTRY", None),
     (S.MARKET_PRICES, "tbl_MarketPrices", "MARKET_PRICES", None),
     (S.RAW_FINANCIALS, "tbl_RawFinancials", "RAW_FINANCIAL_DATA", None),
+    (S.CORPORATE_ACTIONS, "tbl_CorporateActions", "RAW_FINANCIAL_DATA", None),
+    (S.MISSING_DATA, "tbl_MissingData", "MISSING_DATA", None),
     (S.VALUATION_OUTPUTS, "tbl_ValuationOutputs", "VALUATION_OUTPUTS", None),
     (S.HISTORICAL_METRICS, "tbl_HistoricalMetrics", "HISTORICAL_METRICS", None),
     (S.PEER_SUMMARY, "tbl_PeerSummary", "PEER_GROUPS", None),
@@ -28,6 +30,8 @@ INTERFACE_TABLES = [
     (S.OFFICIAL_NAV, "tbl_OfficialNAV", "MF_NAV_CALCULATOR", None),
     (S.FUND_SCHEME_TOTALS, "tbl_SchemeTotals", "MF_NAV_CALCULATOR", None),
     (S.NAV_SUMMARY, "tbl_NAVSummary", "MF_NAV_CALCULATOR", None),
+    (S.CUSTOM_ALLOCATION, "tbl_CustomAllocation", "PORTFOLIO_REBALANCING", None),
+    (S.BENCHMARK_TRI, "tbl_BenchmarkTRI", "FUND_PERFORMANCE", None),
 ]
 
 

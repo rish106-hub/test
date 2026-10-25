@@ -2,6 +2,8 @@
 
 **Launch:** `claude --worktree 04-charts --model sonnet --effort medium "Read CLAUDE.md and spec/worker_briefs/04-charts.md, then execute the brief."`
 
+**Wave 2 (D-028): launched after gate G1** (`spec/worker_briefs/00-main.md`), once the HDFC Bank to fund NAV path is proven. Charts multiply whatever the numbers say, so the numbers come first.
+
 ## Mission
 
 Build the editable peer universe and peer statistics (contract §9), and every native Excel chart the spec requires. Each chart is bound to live tables and formula outputs and carries full metadata. Where data is missing or a metric is not meaningful, show an honest notice instead of a chart.
@@ -41,6 +43,7 @@ Build the editable peer universe and peer statistics (contract §9), and every n
 
 ## Done when
 
+- [ ] `python tools/check_module_contract.py 04-charts --manifest build/out/manifest.json --run-tests` prints no REJECT, and `src/peers/MODULE.md` is filled in
 - [ ] Peer contract tests pass under `--strict-impl`; `tests/peers` and `tests/charts` pass
 - [ ] `--test-build --only 04-charts` and the integrated test build render every zone
 - [ ] Ownership check clean

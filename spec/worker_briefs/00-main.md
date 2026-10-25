@@ -6,12 +6,28 @@
 
 Own the contract and assemble the workers' modules into one workbook. Accept or reject change requests, keep `MODEL_GOVERNANCE` current, and decide what ships. You own `CLAUDE.md`, `spec/**`, `src/common/**`, `build/**`, `tools/**`, `data/reference/**`, `tests/contract/**`, `tests/fixtures/**` and the sheets START_HERE, EXECUTIVE_DASHBOARD, GLOBAL_ASSUMPTIONS, METRIC_DICTIONARY, MODEL_GOVERNANCE and VALIDATION_CHECKS.
 
+## Launch waves and gate G1 (D-028)
+
+Prove the financial calculations on one path before multiplying models, charts and workers.
+
+* **Wave 1: the vertical slice.** 01-data, 02-valuation, 03-nav and 05-qa start together. 02 and 03 build against synthetic fixtures and stubs until real data lands, but their real-data scope is HDFC Bank and the fund that holds it.
+* **Gate G1.** It passes only when every item below has been *executed* on a production build:
+  - [ ] E-01: HDFC Bank valued by the full RI path from cited data, with the equity bridge and freshness shown (§3.1a/b)
+  - [ ] E-02: HDFC Bank confirmed as a holding of an actual Direct Plan Growth scheme, citing that scheme's disclosure
+  - [ ] E-03: that fund's Fair NAV (M1 and M2), reconciled, with all three data-quality measures (§7.5)
+  - [ ] E-04: shock, bias and absolute price applied to HDFC Bank move only the expected outputs
+  - [ ] Both funds: one complete source-backed portfolio snapshot each, with `Holdings_Coverage_Status = PASS`, and every holding that lacks adequate data listed in `missing_data.csv` and on MF_COVERAGE_AUDIT
+  - [ ] 05-qa's clean-room implementation agrees with the 02 and 03 reference functions on that real data
+  - [ ] `tools/check_module_contract.py` accepts 01-data, 02-valuation and 03-nav; no open blocker finding
+* **Wave 2, after G1:** 02 replicates to the other five banks and Max Financial, 03 covers every material holding of both funds, and 04-charts is launched. Record the G1 decision in `governance_log.csv`.
+
 ## Integration loop
 
 For each worker branch that reports ready:
 
 1. `git fetch` and check out the integration branch (currently `claude/financial-modeling-architecture-o2xiwz`).
 2. Run `python tools/check_ownership.py <worker> <integration-branch>` on the worker branch. Reject any branch that touches files it does not own.
+   Then build the worker in isolation (`python build/generate_workbook.py --test-build --only <worker>`) and run `python tools/check_module_contract.py <worker> --manifest build/out/manifest.json --run-tests`. Reject the module on any `REJECT` line (D-027): wrong or missing interface tables or columns, undeclared tables or names, references outside its `consumes`, failing contract tests, invalid CSVs, or an unfilled `MODULE.md`.
 3. Merge with `--no-ff`. Merge order is 01-data → 02-valuation → 04-charts (peers) → 03-nav. Re-run 04-charts' rendering last.
 4. Gate, in order. Stop at the first failure and send it back to the owner.
    * `python -m pytest --strict-impl tests/contract/<owner's files>`, then `python -m pytest`

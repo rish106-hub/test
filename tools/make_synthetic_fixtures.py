@@ -60,6 +60,12 @@ def _rows():
         valued = fv["Base"] is not None
         t["valuation_outputs"].append(dict(
             Security_ID=sid, Valuation_Date=K.PRICE_DATE, Anchor_Date="2026-03-31",
+            Latest_Results_Period_End="2026-09-30" if valued else None, Price_Date=K.PRICE_DATE,
+            BV_Reported_At_Anchor_INR={"S90001": 250.0, "S90002": 60.0}.get(sid),
+            BV_Estimated_At_Valuation_INR=None, Interim_EPS_Deviation_Pct=None,
+            Forecast_Update_Flag="PASS" if valued else None,
+            Financials_Age_Days=23 if valued else None, Anchor_Age_Days=206,
+            Freshness_Status="PASS" if valued else None,
             Primary_Method="Residual Income" if sid in ("S90001", "S90002") else ("FCFF DCF (WACC)" if valued else "None"),
             Secondary_Methods="", FV_Base_INR=fv["Base"], FV_Bear_INR=fv["Bear"], FV_Bull_INR=fv["Bull"],
             Terminal_Value_Share_Base=0.33 if valued else None, Terminal_Flag="PASS" if valued else None,

@@ -19,7 +19,7 @@ OUTPUT_DEFINITIONS = [
     (OutputLabel.FAIR_NAV, "Official NAV adjusted by the fair values of the disclosed holdings. Static-portfolio estimate; see coverage caption."),
     (OutputLabel.SCENARIO_MARKET_NAV, "The disclosed portfolio marked at the selected scenario market prices. Not a forecast."),
     (OutputLabel.HYPOTHETICAL_PORTFOLIO, "A separate user-built basket on PORTFOLIO_REBALANCING. Never an existing fund."),
-    (OutputLabel.TARGET_PURCHASE_PRICE, "Per security: fair value x (1 - required margin of safety)."),
+    (OutputLabel.TARGET_PURCHASE_PRICE, "Per security: selected scenario fair value x (1 - required margin of safety). One definition (D-023)."),
 ]
 
 
@@ -137,10 +137,20 @@ def build_dashboard(ctx: WorkbookContext, data) -> None:
               ("Fair_NAV_Bull", OutputLabel.FAIR_NAV.value + " - Bull", "inr"),
               ("Scenario_Market_NAV", OutputLabel.SCENARIO_MARKET_NAV.value, "inr"),
               ("Diff_vs_Official_Pct", "Fair NAV (Base) vs Official NAV", "pct"),
-              ("Coverage_Caption", "Valuation coverage", "general"),
-              ("Coverage_Status", "Coverage status", "general"),
-              ("Holdings_Age_Days", "Holdings age (days)", "count"),
-              ("Holdings_Date_Status", "Holdings date status", "general")]
+              # Three separate data-quality measures (contract §7.5). Never combined into one score.
+              ("Holdings_Value_Coverage_Pct", "1 Holdings coverage: imported value / reported net assets", "pct"),
+              ("Holdings_Match_Pct", "1 Holdings coverage: positions matched and priced", "pct"),
+              ("Holdings_Coverage_Status", "1 Holdings coverage status", "general"),
+              ("Coverage_Caption", "2 Valuation coverage", "general"),
+              ("Valuation_Coverage_Status", "2 Valuation coverage status", "general"),
+              ("Portfolio_Date", "3 Freshness: portfolio disclosure date", "date"),
+              ("NAV_Date", "3 Freshness: official NAV date", "date"),
+              ("Price_Date", "3 Freshness: market price date", "date"),
+              ("Valuation_Date", "3 Freshness: valuation date", "date"),
+              ("Holdings_Age_Days", "3 Freshness: holdings age (days)", "count"),
+              ("Max_Financials_Age_Days", "3 Freshness: oldest valued financials (days)", "count"),
+              ("Stale_Valued_Weight_Pct", "3 Freshness: weight valued on stale financials", "pct"),
+              ("Freshness_Status", "3 Freshness status", "general")]
     plans = [r["Plan_ID"] for r in data.rows("fund_plans")]
     ws.write(3, 0, "Plan_ID", h)
     for j, p in enumerate(plans):

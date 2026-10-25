@@ -1,0 +1,122 @@
+# Module delivery contract (D-027). Edited only by 00-main.
+# Checked by: python tools/check_module_contract.py <worker> --manifest build/out/manifest.json [--run-tests]
+#
+# A module is accepted for integration only if, in a build that includes it:
+#   * it builds exactly the interface tables in `builds_tables`, each with the schema's
+#     columns in schema order, plus only private tables matching `private_tables`;
+#   * it defines only names matching `defines_names`;
+#   * its formulas reference only its own tables and names, or ones listed in `consumes`;
+#   * every `reference_functions` entry is importable and every `contract_tests` file passes
+#     under --strict-impl;
+#   * every `writes_csv` table exists at its canonical path and validates in production mode;
+#   * `module_doc` exists with the five sections filled in (Inputs, Outputs, Assumptions,
+#     Limitations, Tests) and no TODO left.
+# Patterns use fnmatch syntax (* matches anything).
+
+[modules."00-main"]
+module_doc = ""   # integration session; its contract is spec/ itself
+builds_tables = ["tbl_GlobalInputs", "tbl_MetricDictionary", "tbl_Governance", "tbl_ValidationChecks"]
+private_tables = []
+defines_names = ["in_*"]
+consumes = ["tbl_NAVSummary"]
+reference_functions = []
+contract_tests = []
+writes_csv = ["governance_log"]
+
+[modules."01-data"]
+module_doc = "src/ingestion/MODULE.md"
+builds_tables = [
+  "tbl_SourceManifest", "tbl_SourceLog", "tbl_DatasetInventory", "tbl_MissingData",
+  "tbl_Registry", "tbl_RawFinancials", "tbl_MarketPrices", "tbl_CorporateActions",
+]
+private_tables = ["tbl_Data_*"]
+defines_names = []
+consumes = ["in_*", "tbl_MetricDictionary"]
+reference_functions = [
+  "src.ingestion.registry:match_security", "src.ingestion.registry:next_security_id",
+  "src.ingestion.holdings_import:parse_disclosure", "src.ingestion.holdings_import:diff_portfolios",
+  "src.ingestion.nav_import:parse_amfi_nav", "src.ingestion.sheets:build_sheets",
+]
+contract_tests = ["tests/contract/test_ingestion_contract.py"]
+writes_csv = [
+  "source_manifest", "source_log", "dataset_inventory", "missing_data", "security_registry",
+  "raw_financials", "market_prices", "corporate_actions", "fund_plans", "fund_holdings",
+  "fund_scheme_totals", "official_nav", "benchmark_tri",
+]
+
+[modules."02-valuation"]
+module_doc = "src/valuations/MODULE.md"
+builds_tables = ["tbl_Assumptions", "tbl_ValuationOutputs", "tbl_HistoricalMetrics"]
+private_tables = ["tbl_Val_*"]
+defines_names = ["out_*"]
+consumes = [
+  "in_*", "tbl_Registry", "tbl_MarketPrices", "tbl_RawFinancials", "tbl_CorporateActions",
+  "tbl_MissingData", "tbl_MetricDictionary", "tbl_PeerSummary",
+]
+reference_functions = [
+  "src.valuations.discounting:cost_of_equity_capm", "src.valuations.discounting:discount_factor",
+  "src.valuations.bank_ri:residual_income_value", "src.valuations.ddm:dividend_discount_value",
+  "src.valuations.justified_pb:justified_pb", "src.valuations.peer_relative:peer_relative_value",
+  "src.valuations.rollforward:roll_forward_value", "src.valuations.rollforward:equity_bridge",
+  "src.valuations.bank_drivers:project_bank", "src.valuations.insurance_sotp:sotp_value_per_share",
+  "src.valuations.method_selection:validate_method_for_business_model",
+  "src.valuations.blend:blend_fair_value", "src.valuations.terminal:gordon_terminal_value",
+  "src.valuations.expected_return:xirr", "src.valuations.sheets:build_sheets",
+]
+contract_tests = [
+  "tests/contract/test_bank_valuation_contract.py", "tests/contract/test_insurance_contract.py",
+  "tests/contract/test_returns_contract.py",
+]
+writes_csv = ["assumptions"]
+
+[modules."03-nav"]
+module_doc = "src/fund_nav/MODULE.md"
+builds_tables = [
+  "tbl_PriceControls", "tbl_SectorShocks", "tbl_Holdings_MF001", "tbl_Holdings_MF002",
+  "tbl_FundPlans", "tbl_OfficialNAV", "tbl_SchemeTotals", "tbl_NAVSummary",
+  "tbl_CustomAllocation", "tbl_BenchmarkTRI",
+]
+private_tables = ["tbl_Nav_*"]
+defines_names = []
+consumes = ["in_*", "tbl_Registry", "tbl_MarketPrices", "tbl_ValuationOutputs", "tbl_MissingData"]
+reference_functions = [
+  "src.scenarios.pricing:resolve_controls", "src.fund_nav.classify:coverage_status",
+  "src.fund_nav.methods:weighted_adjustment_nav", "src.fund_nav.methods:quantity_based_nav",
+  "src.fund_nav.methods:scenario_market_nav", "src.fund_nav.methods:reconcile_net_assets",
+  "src.fund_nav.coverage:match_status", "src.fund_nav.coverage:holdings_coverage",
+  "src.fund_nav.coverage:coverage_summary", "src.fund_nav.coverage:freshness_summary",
+  "src.fund_nav.custom_allocation:validate_allocation", "src.fund_nav.rebalance:build_hypothetical_portfolio",
+  "src.fund_nav.overlap:overlap_by_weight", "src.fund_nav.sheets:build_sheets",
+]
+contract_tests = [
+  "tests/contract/test_pricing_contract.py", "tests/contract/test_nav_contract.py",
+  "tests/contract/test_allocation_contract.py", "tests/contract/test_performance_contract.py",
+]
+writes_csv = []   # data/scenarios/custom_allocation.csv is optional user input
+
+[modules."04-charts"]
+module_doc = "src/peers/MODULE.md"
+builds_tables = ["tbl_PeerMembership", "tbl_PeerMetrics", "tbl_PeerSummary"]
+private_tables = ["tbl_Peer_*", "tbl_Chart_*"]
+defines_names = []
+consumes = [
+  "in_*", "tbl_Registry", "tbl_MarketPrices", "tbl_RawFinancials", "tbl_ValuationOutputs",
+  "tbl_HistoricalMetrics", "tbl_PriceControls", "tbl_SectorShocks", "tbl_Holdings_*",
+  "tbl_NAVSummary", "tbl_FundPlans", "tbl_OfficialNAV", "tbl_CustomAllocation", "tbl_BenchmarkTRI",
+]
+reference_functions = [
+  "src.peers.peer_table:peer_statistic", "src.peers.sheets:build_sheets",
+  "src.charts.spec:validate_chart_spec", "src.charts.render:render_charts",
+]
+contract_tests = ["tests/contract/test_peers_contract.py"]
+writes_csv = ["peer_membership", "peer_metrics"]
+
+[modules."05-qa"]
+module_doc = "qa/MODULE.md"
+builds_tables = []
+private_tables = []
+defines_names = []
+consumes = []
+reference_functions = []
+contract_tests = []
+writes_csv = []   # build/out/validation_results.csv is produced per build by qa/run_validation.py

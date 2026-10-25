@@ -13,6 +13,9 @@ in_Recon_Tolerance_Pct,0.005,decimal,decimal,Max relative gap between computed a
 in_Weight_Sum_Tol,0.005,decimal,decimal,Tolerance on disclosed weights summing to 100%,,User assumption,,Rounding in AMC disclosures
 in_Holdings_Stale_Days,45,int,days,Holdings older than this vs in_Price_Date are STALE,,User assumption,,Monthly disclosures arrive ~10 days after month end
 in_Price_Stale_Days,3,int,days,Price observations older than this vs in_Price_Date are STALE,,User assumption,,Allows for exchange holidays
+in_Financials_Stale_Days,135,int,days,Latest reported results older than this vs in_Valuation_Date are STALE,,User assumption,,SEBI LODR Reg 33: quarterly results are due within 45 days of quarter end; 90 + 45 days means a newer quarter should exist (contract §3.1b)
+in_Anchor_Max_Age_Days,425,int,days,Anchor balance sheet older than this vs in_Valuation_Date is FAIL,,User assumption,,Annual audited results are due within 60 days of fiscal year end; 365 + 60 days means a newer balance sheet should exist (contract §3.1b)
+in_Interim_EPS_Dev_Warn,0.15,decimal,decimal,Relative gap between reported interim EPS and pro-rata year-1 forecast EPS that flags the forecast for review,,User assumption,,Contract §3.1a forecast-update check; a governance threshold not a market fact
 in_Peer_Min_N,3,int,count,Minimum valid peers before a peer median is used without WARNING,,User assumption,,Contract §3.5
 in_Clean_Surplus_Tol,0.005,decimal,decimal,Tolerance for the clean-surplus capital retention check,,User assumption,,Contract §3.6
 in_Default_TC_Pct,0.001,decimal,decimal,Transaction cost for hypothetical trades,,SYNTHETIC TEST FIXTURE,,Blank until entered; hypothetical costs are user inputs (spec method four)

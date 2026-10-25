@@ -38,10 +38,10 @@ class PriceControlOutputs:
     selected_scenario_fair_value: float | None     # None for an unvalued security
     implied_upside_to_fair_value: float | None
     fair_value_gap: float | None
-    target_purchase_price_base: float | None
-    target_purchase_price_selected: float | None
+    target_purchase_price: float | None            # Selected_Scenario_Fair_Value x (1 - MoS); the only TPP (D-023)
     fv_label: str
     control_status: str                            # "OK" | "UNVALUED" | "FAIL: <reason>"
+    control_warning: str = ""                      # §6.2: inputs set but ignored by the selected mode; "" if none
 
 
 def resolve_controls(inp: PriceControlInputs) -> PriceControlOutputs:

@@ -250,6 +250,15 @@ class WorkbookContext:
                     problems.append(f"{rec.owner} {rec.sheet}!{rec.cell}: unknown name {n}")
         return problems
 
+    def references_by_owner(self) -> dict[str, dict[str, list[str]]]:
+        """Tables and names each owner's formulas reference (checked by tools/check_module_contract.py)."""
+        refs: dict[str, dict[str, set[str]]] = {}
+        for rec in self._formulas:
+            r = refs.setdefault(rec.owner, {"tables": set(), "names": set()})
+            r["tables"] |= X.tables_referenced(rec.formula)
+            r["names"] |= X.names_referenced(rec.formula)
+        return {o: {k: sorted(v) for k, v in r.items()} for o, r in sorted(refs.items())}
+
     def manifest(self) -> dict:
         """Machine-readable interface of the built workbook (written to build/out/manifest.json)."""
         return {
@@ -258,6 +267,7 @@ class WorkbookContext:
             "names": self.names,
             "chart_zones": {k: vars(v) for k, v in self.chart_zones.items()},
             "formula_count": len(self._formulas),
+            "references": self.references_by_owner(),
             "test_build": self.test_build,
             "unbuilt_sheets": self.unbuilt_sheets(),
         }

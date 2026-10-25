@@ -12,7 +12,7 @@ from src.valuations.errors import MethodNotAllowedError, TerminalGrowthError, Va
 from src.valuations.justified_pb import justified_pb
 from src.valuations.method_selection import validate_method_for_business_model
 from src.valuations.peer_relative import peer_relative_value
-from src.valuations.rollforward import roll_forward_value
+from src.valuations.rollforward import InterimResult, equity_bridge, roll_forward_value
 from src.valuations.terminal import gordon_terminal_value, sensitivity_grid, terminal_flag
 
 pytestmark = pytest.mark.owner("02-valuation")
@@ -132,3 +132,55 @@ def test_T_BNK_10_driver_projection_one_year_hand_computed():
     assert p.equity == approx(219.5)
     assert p.bvps == approx(21.95)
     assert p.roe == approx(24.375 / 209.75)
+
+
+# Equity bridge (contract §3.1a/b, D-025). Anchor A = FY2026 year end; FY2027 is 365 days, FY2028 366.
+A = date(2026, 3, 31)
+EPS_FC = [(date(2027, 3, 31), 18.0), (date(2028, 3, 31), 20.0)]
+DIVS = [(date(2026, 6, 20), 2.0), (date(2026, 3, 1), 99.0), (date(2027, 11, 1), 99.0)]   # only the first is in (A, V]
+Q1, Q2, Q3 = date(2026, 6, 30), date(2026, 9, 30), date(2026, 12, 31)
+
+
+def test_T_BNK_11_equity_bridge_reported_interims_then_forecast_stub():
+    b = equity_bridge(100.0, A, EPS_FC, date(2026, 10, 25),
+                      interim_results=[InterimResult(Q1, 4.4), InterimResult(Q2, 4.6)], dividends=DIVS)
+    assert b.bv_reported_at_anchor == 100.0                      # historical value kept as reported
+    assert b.latest_results_period_end == Q2
+    assert b.eps_reported_after_anchor == approx(9.0)
+    assert b.eps_forecast_stub == approx(18.0 * 25 / 365)         # 1.232877: only the unreported 25 days
+    assert b.dividends_paid == approx(2.0)
+    assert b.bv_estimated_at_valuation == approx(108.232876712329)
+    assert b.interim_eps_deviation_pct == approx(9.0 / (18.0 * 183 / 365) - 1)   # -0.27%
+    assert b.forecast_update_flag == "PASS"
+    assert (b.financials_age_days, b.anchor_age_days, b.freshness_status) == (25, 208, "PASS")
+
+
+def test_T_BNK_12_interim_results_far_below_forecast_flag_the_forecast():
+    b = equity_bridge(100.0, A, EPS_FC, date(2026, 10, 25), interim_results=[InterimResult(Q1, 3.0)], dividends=DIVS)
+    assert b.interim_eps_deviation_pct == approx(3.0 / (18.0 * 91 / 365) - 1)   # -33.2%
+    assert b.forecast_update_flag == "WARNING"
+    assert b.bv_estimated_at_valuation == approx(106.769863013699)
+    assert (b.financials_age_days, b.freshness_status) == (117, "PASS")
+
+
+def test_T_BNK_13_no_interim_results_is_all_forecast_and_stale():
+    b = equity_bridge(100.0, A, EPS_FC, date(2026, 10, 25), dividends=DIVS)
+    assert b.latest_results_period_end == A
+    assert b.eps_reported_after_anchor == 0.0
+    assert b.interim_eps_deviation_pct is None
+    assert b.bv_estimated_at_valuation == approx(108.257534246575)    # 100 + 18 x 208/365 - 2
+    assert (b.financials_age_days, b.freshness_status) == (208, "STALE")
+
+
+def test_T_BNK_14_stub_crossing_a_fiscal_year_end_and_an_overdue_anchor():
+    b = equity_bridge(100.0, A, EPS_FC, date(2027, 6, 10),
+                      interim_results=[InterimResult(Q1, 4.4), InterimResult(Q2, 4.6), InterimResult(Q3, 4.5)],
+                      dividends=DIVS)
+    assert b.eps_forecast_stub == approx(18.0 * 90 / 365 + 20.0 * 71 / 366)   # 8.318138
+    assert b.bv_estimated_at_valuation == approx(119.818137585149)
+    assert b.anchor_age_days == 436 and b.freshness_status == "FAIL"           # > 425: FY2027 accounts are due
+
+
+def test_T_BNK_15_valuation_date_beyond_the_forecast_horizon_is_rejected():
+    with pytest.raises(ValuationError):
+        equity_bridge(100.0, A, EPS_FC, date(2028, 4, 15))

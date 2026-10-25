@@ -1,6 +1,6 @@
 # Financial Model Contract
 
-Status: **v1.0, frozen for the first worker wave.** Source requirement: `spec/source/Indian_Equity_Valuation_and_MF_NAV_Model_v3.xml` (spec v3.0). Requirement IDs such as `R004` refer to that file's `<non_negotiable_rules>`. Decision IDs such as `D-004` refer to `spec/decisions.md`.
+Status: **v1.1, frozen for the first worker wave.** v1.1 (2026-10-25, pre-launch review) adds the separate dates and the equity bridge (§0, §3.1), a single Target Purchase Price (§6), the shock precedence rules (§6.1–6.2) and the three data-quality measures (§7.5). See D-023…D-028. Source requirement: `spec/source/Indian_Equity_Valuation_and_MF_NAV_Model_v3.xml` (spec v3.0). Requirement IDs such as `R004` refer to that file's `<non_negotiable_rules>`. Decision IDs such as `D-004` refer to `spec/decisions.md`.
 
 This document is the single definition of every quantity that crosses a module boundary. If a worker needs a definition that is missing here, they file a change request (`spec/change_requests/`). They do not invent a local definition.
 
@@ -20,12 +20,24 @@ Every formula below exists twice:
 | Per-share and per-unit values | **INR** (absolute rupees), suffix `_INR`. Local-currency prices use suffix `_LCY` and carry a `Currency` column. |
 | Quantities | Absolute share or unit counts. Never in lakh or crore. |
 | Unit conversion | `Market_Value_INR_Cr = Quantity × Price_INR / 1e7`. Source values in lakh are converted with `/100` to crore at import. The raw value and raw unit are preserved (`spec/data_schema.md`). |
-| Dates | ISO `YYYY-MM-DD`. Every value that depends on a date carries its own date column. |
+| Dates | ISO `YYYY-MM-DD`. Every value that depends on a date carries its own date column. The five model dates are never merged (table below). |
 | Fiscal periods | Indian fiscal year: `FY2026` = 2025-04-01 to 2026-03-31. Quarters: `Q1FY2027` ends 2026-06-30. Labels are produced by `src/common/units.py::fiscal_label`. |
 | Year fractions | `τ = days / 365.25` for discounting and roll-forward. XIRR uses Excel's `days / 365` convention. Both are named explicitly in every formula below. |
 | Accounting basis | `Standalone` or `Consolidated`, recorded per observation. One valuation uses one basis. Mixing is a validation FAIL. |
 | Missing values | Blank / `None`, never `0`. Status text explains why (R009, missing-data rule). |
 | Identifiers | `Entity_ID` = issuer (`C001`…). `Security_ID` = instrument / share class (`S00001`…). `ISIN` is the matching key for imports. `Fund_ID` = scheme (`MF001`…). `Plan_ID` = scheme + plan + option (`MF001-DIR-GR`). Names are never join keys (D-010). |
+
+### 0.1 The five model dates (D-025)
+
+| Date | Meaning | Where it is held |
+|---|---|---|
+| Financials date | `Anchor_Date` (A): period end of the reported balance sheet behind BV_0. `Latest_Results_Period_End` (R): end of the latest reported earnings period, interim included. | `tbl_ValuationOutputs`, per security |
+| `Price_Date` | Market close used for every compared price: `in_Price_Date` | `tbl_MarketPrices`, `tbl_ValuationOutputs`, `tbl_NAVSummary` |
+| `Portfolio_Date` | Date of the fund's disclosed holdings snapshot | `tbl_Holdings_*`, `tbl_NAVSummary` |
+| `NAV_Date` | Date of the Official NAV used | `tbl_OfficialNAV`, `tbl_NAVSummary` |
+| `Valuation_Date` | `in_Valuation_Date`, the date every fair value is stated at | `tbl_ValuationOutputs`, `tbl_NAVSummary` |
+
+Labelling rule: a value is captioned with the date it is **reported** at. A reported number is never relabelled as current. Anything carried from an earlier date to `Valuation_Date` is captioned *estimate* and shows its bridge (§3.1a).
 
 ---
 
@@ -39,7 +51,7 @@ These five outputs must never share a label, a cell, or a chart series without a
 | **Modelled Intrinsic Value per Unit** (a.k.a. Estimated Fair NAV) | Official NAV adjusted by the security fair values of the disclosed portfolio snapshot. Produced for the Base, Bear and Bull cases and for the Selected scenario. Always labelled *estimate*. | §7.2–7.3 |
 | **Scenario Market NAV** | The disclosed portfolio snapshot marked at the *Selected Scenario Market Prices*. Not a forecast. | §7.4 |
 | **Hypothetical Rebalanced Portfolio Value** | A separate user-built basket. Never attached to an existing fund's NAV (R011). | §7.6 |
-| **Target Purchase Price** | Per security: fair value × (1 − margin of safety). Two variants (D-003). | §6 |
+| **Target Purchase Price** | Per security: `Selected_Scenario_Fair_Value × (1 − Required_Margin_of_Safety_Pct)`. One definition (D-023). | §6 |
 
 ---
 
@@ -62,15 +74,48 @@ DF(τ) = (1 + r_e)^(−τ)                 τ in years, days/365.25, end-of-peri
 
 Owner: `02-valuation`. Primary method: Residual Income. Secondary methods: DDM, justified P/B, peer-relative. A conventional FCFF/WACC DCF is **forbidden** as a bank's primary method. `validate_method_for_business_model` raises if it is attempted.
 
-### 3.1 Valuation anchor and roll-forward (D-007)
+### 3.1 Valuation anchor and roll-forward (D-007, D-025)
 
-All bank and insurer models first value the equity **per share at an anchor date `A`**: the balance-sheet date of the latest reported book value, normally the last fiscal year end. They then roll forward to the common valuation date `V`:
+All bank and insurer models first value the equity **per share at an anchor date `A`**: the period end of the latest **reported fiscal-year balance sheet** (audited annual accounts, the same accounting basis throughout). BV_0 is that reported book value. It is historical information, captioned "as of A", and never relabelled as current. Forecast years `t = 1 … N` are the fiscal years after A.
+
+The value is then rolled forward to the common valuation date `V`:
 
 ```
 V_V = V_A × (1 + r_e)^τ(A,V) − Σ_{d ∈ (A, V]} DPS_d × (1 + r_e)^τ(d,V)
 ```
 
 `d` runs over dividends whose **ex-date** falls after `A` and on or before `V`. These dividends are included in `BV_A`, because Indian GAAP and Ind AS do not deduct a proposed dividend until it is approved, and they have left the company by `V`. Reference: `rollforward.roll_forward_value`.
+
+The roll-forward is not an extra assumption. Under the same forecasts it is the value at V that the model expects: value accretes at `r_e` and dividends paid leave it. What it does *not* do is show the earnings and equity it implies, or absorb interim results reported after A. §3.1a makes both explicit.
+
+### 3.1a Equity bridge A → V (D-025)
+
+Reference: `rollforward.equity_bridge`. Shown on every VAL_* sheet as its own block, one line per component, each tagged *Reported* or *Forecast*:
+
+```
+  BV_A                                     Reported   book value per diluted share at A
++ EPS_reported(A, R]                       Reported   Σ EPS of discrete interim periods ending in (A, V];
+                                                      R = latest such period end, or A if none
++ EPS_forecast(R, V]                       Forecast   forecast EPS accrued by calendar day:
+                                                      Σ_t EPS_t × days((R,V] ∩ FY_t) / days(FY_t)
+− Σ DPS_d, ex-date d in (A, V]             Reported
+= BV_V_est                                 Estimate   "Estimated book value per share at V"
+```
+
+* **Interim check.** When interim periods have been reported (R > A): `Interim_EPS_Deviation_Pct = EPS_reported(A,R] / EPS_forecast(A,R] − 1`, the forecast accrued the same way. `|deviation| > in_Interim_EPS_Dev_Warn` (default 0.15) sets `Forecast_Update_Flag = WARNING`: the year-1 drivers disagree with reported results and must be reviewed. Interim results never overwrite the forecast silently.
+* Any multiple stated at V (market P/B, implied P/B = `V_V / BV_V_est`) uses `BV_V_est` and is captioned *estimate*. A multiple on reported book value says "on BV at A".
+* If V is after the last forecast year end, `equity_bridge` raises `ValuationError`. The model has no forecast covering V.
+* Moving the anchor to an interim balance sheet (banks publish half-yearly statements of assets and liabilities) needs stub-period RI discounting. That is a change request, not a worker decision.
+
+### 3.1b Financials freshness
+
+```
+Financials_Age_Days = V − R          STALE when > in_Financials_Stale_Days (default 135)
+Anchor_Age_Days     = V − A          FAIL  when > in_Anchor_Max_Age_Days  (default 425)
+Freshness_Status    = FAIL if the anchor check fails, else STALE if the financials check fails, else PASS
+```
+
+The defaults follow SEBI LODR Regulation 33 deadlines: quarterly results within 45 days of quarter end, and annual audited results within 60 days of year end. Past either threshold, a newer filing should exist and 01-data should look for it. `Freshness_Status` travels with the security into `tbl_ValuationOutputs` and from there into the fund freshness measure (§7.5c).
 
 ### 3.2 Residual Income (primary)
 
@@ -230,19 +275,51 @@ Selected_Scenario_Fair_Value  =
     Manual Fair-Value Bias          → Fair_Value_After_Bias
 Implied_Upside_To_Fair_Value  = Selected_Scenario_Fair_Value / Selected_Scenario_Market_Price − 1
 Fair_Value_Gap                = Fair_Value_After_Bias / Original_Market_Price − 1
-Target_Purchase_Price_Base    = Model_FV_Base × (1 − Required_Margin_of_Safety_Pct)
-Target_Purchase_Price_Selected= Selected_Scenario_Fair_Value × (1 − Required_Margin_of_Safety_Pct)
+Target_Purchase_Price         = Selected_Scenario_Fair_Value × (1 − Required_Margin_of_Safety_Pct)      (D-023)
 FV_Label                      = "Model output (unmodified)" if mode = Model Base Fair Value
                                 "Model output – fundamental case <case>"  if Fundamental
                                 "MANUALLY BIASED fair value (<bias>%)"     if Manual
 ```
 
-Rules:
+Fair-value quantities stay distinct, in separate columns: `Model_FV_Base` (the model output, read-only), `Fundamental_Case_FV`, `Fair_Value_After_Bias` (the adjusted fair value) and `Selected_Scenario_Fair_Value` (the one the selector picks). `Target_Purchase_Price` has one definition and it reads only `Selected_Scenario_Fair_Value`. At default controls it equals `Model_FV_Base × (1 − MoS)`, which is the spec's first formula. A market-price shock never changes it.
 
-* Global and sector shocks apply only in `Market Price Shock` mode. `Absolute` ignores every shock.
+### 6.1 How price shocks combine (D-006, D-024)
+
+```
+P_scenario = P_0 × (1 + s_global) × (1 + s_sector) × (1 + s_security)        P_0 = Original_Market_Price
+```
+
+Each shock is a decimal (−10% = −0.10). The rules:
+
+1. **From the original price.** `P_0` is always `Original_Market_Price`. No scenario price is ever computed from another scenario price.
+2. **Once.** The three shock inputs are read in exactly one place, `tbl_PriceControls[Effective_Shock_Pct]`. Holdings, NAV Method 3, rebalancing and charts read `Selected_Scenario_Market_Price` and never apply a shock again. QA scans for this (W-17).
+3. **The mode decides, and precedence is fixed.** `Market_Price_Scenario_Mode` alone chooses the price:
+
+| Mode | Selected_Scenario_Market_Price | Inputs ignored |
+|---|---|---|
+| `Original Market Price` | `P_0` | every shock and any absolute price |
+| `Market Price Shock` | `P_0 × (1 + Effective_Shock_Pct)` | any absolute price |
+| `Absolute Scenario Market Price` | `Absolute_Scenario_Price`, overriding every percentage shock. Blank → `#N/A` and FAIL (D-014) | every shock |
+
+4. **Foreign securities.** The shock applies to the price in the trading currency. FX is unchanged, so the INR price moves by the same factor.
+
+### 6.2 Ignored inputs are disclosed
+
+`Control_Warning` lists every input that is set but has no effect under the current modes, joined by `"; "` in this order:
+
+| Condition | Text |
+|---|---|
+| any of the three shocks ≠ 0 and the mode is not `Market Price Shock` | `Price shocks set but ignored (mode: <market mode>)` |
+| `Absolute_Scenario_Price` not blank and the mode is not `Absolute Scenario Market Price` | `Absolute price set but ignored (mode: <market mode>)` |
+| `Fair_Value_Bias_Pct` ≠ 0 and the FV mode is not `Manual Fair-Value Bias` | `Fair-value bias set but ignored (mode: <fair-value mode>)` |
+
+Blank means nothing is ignored. A warning never changes `Control_Status`.
+
+### 6.3 Other rules
+
 * No control changes another control's output. The spec's worked example (750 / 500 / −10% / −10% / 595) is test T-PRC-01…03.
 * Reset (spec `<reset_controls>`): a `Reset` column computes the default for every input. The documented reset is to copy the `Reset_*` values over the inputs, or regenerate the workbook. Sheet `VALIDATION_CHECKS` shows `Controls_At_Default = TRUE/FALSE`.
-* An unvalued security has a blank `Model_FV_*`. Its fair-value outputs are blank and `Control_Status = UNVALUED`. Market-price outputs still work.
+* An unvalued security has a blank `Model_FV_*`. Its fair-value outputs, `Target_Purchase_Price` included, are blank and `Control_Status = UNVALUED`. Market-price outputs still work.
 
 ---
 
@@ -259,7 +336,7 @@ Every holdings line has an `Asset_Class` (§ data_schema) and a `Valuation_Cover
 | `MODEL_VALUED` | equity with a valid `tbl_ValuationOutputs` row for the case | model FV | yes |
 | `CARRYING_VALUE` | cash, TREPS/repo, receivables, payables, accrued items, net current assets | disclosed value (adjustment 0 by construction) | yes |
 | `MARKET_PASS_THROUGH` | debt, money-market, derivatives, REIT/InvIT, foreign ETFs without a model | market value (adjustment 0) | yes, reported separately |
-| `UNVALUED` | equity without a valid model output | **market price is used, adjustment 0**, flagged (D-015) | **no** |
+| `UNVALUED` | equity without a valid model output, or any POSITION line that is not `MATCHED` (§7.5a) | **market price is used, adjustment 0**, flagged (D-015) | **no** |
 
 ### 7.1 Official NAV
 
@@ -308,18 +385,53 @@ Scenario_Market_NAV(plan) = Official_NAV(plan) × NA_scen / NA_mkt
 
 With every control at its default, `Scenario_Market_NAV = Official_NAV` exactly. Test T-NAV-03 checks this.
 
-### 7.5 Coverage and unvalued disclosure (R009)
+### 7.5 Data quality: three separate measures (R009, D-026)
+
+A holding can be imported and still have no valid fair value, and a valued holding can rest on old financials. These are different problems, so the model reports three measures. Each has its own status, and they are **never combined into one score**. All three appear per plan in `tbl_NAVSummary` and on EXECUTIVE_DASHBOARD.
+
+#### 7.5a (1) Holdings coverage: is the official portfolio imported and markable?
+
+Reference: `coverage.holdings_coverage`, `coverage.match_status`
+
+```
+Holdings_Match_Status (POSITION lines only)
+    MATCHED     registry Security_ID found for the disclosed ISIN, and a price at in_Price_Date
+    UNMATCHED   no registry Security_ID
+    NO_PRICE    Security_ID known, no price at in_Price_Date
+Holdings_Value_Coverage_Pct = Σ disclosed line values (positions + ONA) / Reported_Scheme_Net_Assets_INR_Cr
+Holdings_Match_Pct          = Σ w_i (MATCHED) / Σ w_i (POSITION lines)
+Holdings_Coverage_Status    = PASS if Recon_Status = PASS (§7.3) and Holdings_Match_Pct = 1, else FAIL
+```
+
+A line that is not `MATCHED` is never `MODEL_VALUED`. In the workbook its price lookup stays `#N/A` (WI-6), so Method 2 and Method 3 show `#N/A` until 01-data resolves it. The unmatched lines are listed by `Holding_Line_ID` on MF_COVERAGE_AUDIT.
+
+#### 7.5b (2) Valuation coverage: how much has a valid fair value?
 
 Reference: `coverage.coverage_summary`
 
 ```
-Coverage_Total_Pct   = Σ w_i over lines whose status ≠ UNVALUED          (denominator: total scheme net assets)
-Coverage_Equity_Pct  = Σ w_i (MODEL_VALUED) / Σ w_i (equity lines)
+Valuation_Coverage_Total_Pct  = Σ w_i over lines whose status ≠ UNVALUED          (denominator: total scheme net assets)
+Valuation_Coverage_Equity_Pct = Σ w_i (MODEL_VALUED) / Σ w_i (equity lines)
 Unvalued_Weight_Pct  = Σ w_i (UNVALUED)
 Unvalued_Count, Unvalued_Value_INR_Cr
 ```
 
-Thresholds from GLOBAL_ASSUMPTIONS: `Coverage_Equity_Pct < in_Coverage_Warn` is WARNING, and `< in_Coverage_Fail` is FAIL. Each Fair NAV output carries the caption `"Covers X% of equity; Y% of net assets unvalued (adjustment 0)"`, with X and Y to one decimal place (e.g. `Covers 83.3% of equity; 10.0% of net assets unvalued (adjustment 0)`). This caption is generated, not typed, and it must appear on EXECUTIVE_DASHBOARD.
+Thresholds from GLOBAL_ASSUMPTIONS: `Valuation_Coverage_Equity_Pct < in_Coverage_Warn` is WARNING, and `< in_Coverage_Fail` is FAIL. Each Fair NAV output carries the caption `"Covers X% of equity; Y% of net assets unvalued (adjustment 0)"`, with X and Y to one decimal place (e.g. `Covers 83.3% of equity; 10.0% of net assets unvalued (adjustment 0)`). This caption is generated, not typed, and it must appear on EXECUTIVE_DASHBOARD.
+
+#### 7.5c (3) Data freshness: how old is each input?
+
+Reference: `coverage.freshness_summary`. Ages are in days to `in_Valuation_Date`; each date in §0.1 is shown separately.
+
+```
+Holdings_Age_Days        = Valuation_Date − Portfolio_Date               STALE when > in_Holdings_Stale_Days (45)
+NAV_Date_Gap_Days        = Valuation_Date − NAV_Date                     STALE when > in_Price_Stale_Days (3)
+Max_Financials_Age_Days  = max over MODEL_VALUED lines of (Valuation_Date − Financials_As_Of)
+Stale_Valued_Weight_Pct  = Σ w_i over MODEL_VALUED lines with Financials_As_Of blank
+                           or older than in_Financials_Stale_Days (135)     STALE when > 0
+Freshness_Status         = STALE if any of the three checks is STALE, else PASS
+```
+
+`Financials_As_Of` is the issuer's `Latest_Results_Period_End` (§3.1a). A blank date counts as stale, never as fresh. Price freshness per security is D3 in §7.7 and `in_Price_Stale_Days` in `tbl_MarketPrices`.
 
 ### 7.6 Method 4: Hypothetical Rebalanced Portfolio (R011)
 
@@ -353,7 +465,7 @@ Custom inputs live only in `tbl_CustomAllocation`. No formula in an actual-holdi
 | `Diff_vs_Official_INR` | `Fair_NAV − Official_NAV` (per unit) |
 | `Diff_vs_Official_Pct` | `Fair_NAV / Official_NAV − 1` |
 | Sector contribution | `Σ_{i∈s} Adj_i`. The sector contributions sum to `Σ Adj_i` exactly. |
-| D1 Holdings age | `in_Price_Date − Portfolio_Date` in days. WARNING when > `in_Holdings_Stale_Days` (default 45). |
+| D1 Holdings age | See §7.5c `Holdings_Age_Days`. |
 | D2 Method drift | `Fair_NAV_M1 − Fair_NAV_M2`. Non-zero means the disclosed weights have drifted from `q × P / NA_mkt`. |
 | D3 Price-date mix | The count of securities whose `Price_Date ≠ in_Price_Date`. Must be 0, or each such row is listed. |
 | D4 FX timestamp | For foreign lines: local close timestamp, FX rate date and the gap from `in_Price_Date`. |

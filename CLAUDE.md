@@ -6,7 +6,7 @@ This repository generates one formula-driven Excel workbook, `Indian_Equity_Valu
 
 1. Your brief: `spec/worker_briefs/<your-id>.md`.
 2. `spec/financial_model_contract.md`: the only definitions of fair value, NAV methods, weights, coverage, scenario controls and units.
-3. `spec/data_schema.md` (generated from `src/common/schema.py`), `spec/workbook_interface.md` and `spec/decisions.md`.
+3. `spec/data_schema.md` (generated from `src/common/schema.py`), `spec/workbook_interface.md`, `spec/module_contracts.toml` (what your module must deliver) and `spec/decisions.md`.
 4. `spec/test_plan.md`: what "done" is measured against.
 
 ## Who owns what
@@ -42,6 +42,7 @@ This repository generates one formula-driven Excel workbook, `Indian_Equity_Valu
 * R006 / R011: Official NAV, Modelled Intrinsic Value per Unit, Scenario Market NAV, Hypothetical Rebalanced Portfolio Value and Target Purchase Price are **five distinct outputs**, each with its fixed `OutputLabel` caption.
 * R007 / R008: market-price and fair-value controls are independent, and neither ever overwrites an original price, a model value or imported data.
 * R009: an unvalued holding stays visibly unvalued. It is never 0 and never hidden, and coverage is always disclosed.
+* Data quality is three separate measures: holdings coverage, valuation coverage and freshness (contract §7.5). They are never blended into one score. The five model dates (contract §0.1) are never merged, and a reported figure is never relabelled as current.
 * Synthetic fixtures (`SYNTHETIC TEST FIXTURE`, `SRC-SYNTH*`) are for tests only. A production build rejects them (D-013).
 * A test is reported only if it ran. Anything else is `NOT RUN`, never PASS.
 
@@ -59,12 +60,14 @@ python build/recalc.py build/out/Indian_Equity_Valuation_and_MF_NAV_Model.xlsx  
 python tools/render_schema_doc.py --check                 # schema doc in sync
 python tools/make_synthetic_fixtures.py --check           # fixtures in sync with tests/contract/cases.py
 python tools/check_ownership.py <id> <base-ref>
+python tools/check_module_contract.py <id> --manifest build/out/manifest.json --run-tests   # delivery gate (D-027)
 ```
 
 ## Workflow
 
 1. Work in your worktree branch, which is based on the integration branch (currently `claude/financial-modeling-architecture-o2xiwz`).
-2. Make your contract tests pass under `--strict-impl`. Add your own tests under your owned `tests/` folder.
+2. Make your contract tests pass under `--strict-impl`. Add your own tests under your owned `tests/` folder. Fill in your `MODULE.md` (inputs, outputs, assumptions, limitations, tests).
 3. Build your sheets in isolation with `--test-build --only <id>`, recalculate, and check the values.
-4. Commit only owned paths, push, and tell 00-main. 00-main merges in the order 01 → 02 → 04 → 03, runs the gates in `spec/worker_briefs/00-main.md`, then 05-qa validates the integrated build.
-5. Merge the integration branch into your branch whenever 00-main announces a contract change.
+4. Run `tools/check_module_contract.py` on your isolated build. Commit only owned paths, push, and tell 00-main. 00-main rejects a module that fails the check, merges in the order 01 → 02 → 04 → 03, runs the gates in `spec/worker_briefs/00-main.md`, then 05-qa validates the integrated build.
+5. Wave 1 is HDFC Bank → its fund only. Nothing scales to more companies, holdings or charts until gate G1 passes (D-028).
+6. Merge the integration branch into your branch whenever 00-main announces a contract change.
