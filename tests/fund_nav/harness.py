@@ -36,6 +36,14 @@ class Built:
             rows.append({h: sheet.get(f"{L(c0 + j)}{r}") for j, h in enumerate(info["columns"])})
         return rows
 
+    def labelled(self, sheet: str, label_prefix: str, col: str = "B"):
+        """Value in `col` of the first row whose column-A text starts with label_prefix."""
+        cells = self.values[sheet]
+        for coord, v in cells.items():
+            if coord.startswith("A") and coord[1:].isdigit() and isinstance(v, str) and v.startswith(label_prefix):
+                return cells.get(f"{col}{coord[1:]}")
+        raise KeyError(label_prefix)
+
     def row(self, name: str, key_col: str, key: str) -> dict:
         return next(r for r in self.table(name) if r[key_col] == key)
 
