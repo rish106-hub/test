@@ -8,7 +8,7 @@
 [workers."00-main"]
 role = "Architecture + integration (this session after hand-off)"
 paths = [
-  "CLAUDE.md", "README.md", "pyproject.toml", "requirements.txt", ".gitignore",
+  "CLAUDE.md", "AGENTS.md", "tracker.md", "README.md", "pyproject.toml", "requirements.txt", ".gitignore",
   "spec/**", "src/__init__.py", "src/common/**", "build/**", "tools/**",
   "data/reference/**", "data/README.md", "tests/conftest.py", "tests/test_common_*.py",
   "tests/__init__.py",
