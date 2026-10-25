@@ -1,0 +1,1776 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project_specification version="3.0">
+
+  <project>
+    <name>Indian Equity Intrinsic Valuation and Mutual Fund Fair NAV Engine</name>
+    <output_file>Indian_Equity_Valuation_and_MF_NAV_Model.xlsx</output_file>
+    <primary_objective>
+      Build an extendable, auditable Excel financial research system that estimates
+      the intrinsic value of listed Indian companies, compares intrinsic value with
+      market prices, allows user-controlled price adjustments and portfolio scenarios,
+      and estimates the fair value of mutual fund holdings and the resulting
+      modelled NAV for selected mutual fund schemes.
+    </primary_objective>
+    <secondary_objective>
+      Enable the user to judge whether the portfolio concentration, valuation,
+      expected return and downside risk of Parag Parikh Flexi Cap Fund and
+      HDFC Mid Cap Fund justify an investment over a multi-year horizon.
+    </secondary_objective>
+    <time_horizon>Five-year investment analysis with ten-year historical context.</time_horizon>
+    <market>India</market>
+    <base_currency>INR</base_currency>
+    <financial_reporting_units>INR crore unless otherwise stated</financial_reporting_units>
+    <valuation_date>Editable common valuation date. Default to the latest date for which all required data can be reconciled.</valuation_date>
+    <excel_target>Microsoft Excel 365</excel_target>
+    <deliverables>
+      <deliverable>One formula-driven Excel workbook.</deliverable>
+      <deliverable>README and user operating manual.</deliverable>
+      <deliverable>Source completeness and missing-data report.</deliverable>
+      <deliverable>Formula and model-validation report, showing only tests actually executed.</deliverable>
+      <deliverable>Data-feasibility inventory, dataset refresh workflow and data-access limitations.</deliverable>
+      <deliverable>Model-governance and manual-override log.</deliverable>
+      <deliverable>Historical model-validation report, including forecast errors and backtesting limitations.</deliverable>
+      <deliverable>Data import instructions for monthly mutual-fund portfolio updates.</deliverable>
+      <deliverable>Worked examples for company valuation, price shocks and fund NAV scenarios.</deliverable>
+    </deliverables>
+  </project>
+
+
+  <valuation_definitions_and_outputs>
+    <official_nav>
+      The official NAV is the published NAV for the exact scheme, plan, option
+      and valuation date, obtained from a reliable official source. It is not
+      replaced by the independent model. Record the published NAV and date.
+    </official_nav>
+    <modelled_intrinsic_value_per_unit>
+      The modelled intrinsic value per unit is an analytical estimate derived
+      from the underlying security fair values and other assets and liabilities
+      using a stated portfolio snapshot and stated assumptions. Label it as an
+      estimate, not an objectively correct or official NAV.
+    </modelled_intrinsic_value_per_unit>
+    <scenario_market_nav>
+      Scenario market NAV represents the result of applying hypothetical market
+      prices to a specified portfolio snapshot while applying explicit assumptions
+      about quantities, cash, liabilities and other positions. It is not the
+      official NAV and is not a prediction unless accompanied by a separate forecast.
+    </scenario_market_nav>
+    <hypothetical_rebalanced_portfolio_value>
+      This represents a separate hypothetical basket after trades or allocations
+      chosen by the user. It must not be confused with an existing mutual-fund NAV.
+    </hypothetical_rebalanced_portfolio_value>
+    <purchase_price>
+      A target purchase price is derived from the modelled fair value and a
+      user-defined margin of safety. It is not a forecast of the future market price.
+    </purchase_price>
+    <mandatory_display_rule>
+      Display Official NAV, Modelled Intrinsic Value per Unit, Scenario Market NAV,
+      Hypothetical Rebalanced Portfolio Value and Target Purchase Price as distinct
+      outputs wherever applicable. Explain the assumptions behind each.
+    </mandatory_display_rule>
+  </valuation_definitions_and_outputs>
+
+  <persona>
+    <role>
+      You are a senior Indian equity research analyst, bank valuation specialist,
+      financial modeller, portfolio analyst, data engineer and Excel quality
+      assurance reviewer working together.
+    </role>
+    <experience_expectation>
+      Apply buy-side equity research standards. Understand Indian financial
+      statements, banking economics, insurance valuation, sector-specific accounting,
+      corporate actions, mutual fund disclosures, valuation uncertainty and
+      portfolio-level risk.
+    </experience_expectation>
+    <working_style>
+      Be evidence-led, sceptical, explicit about assumptions and rigorous about
+      formulas. Separate facts, company guidance, third-party forecasts and
+      user assumptions.
+    </working_style>
+    <decision_principle>
+      Never force a stock to appear undervalued or overvalued. Let source data,
+      forecast assumptions and valuation methods determine the result.
+    </decision_principle>
+    <coding_principle>
+      Build a working, maintainable financial model, not a decorative spreadsheet.
+      Prioritise formula integrity, traceability, user control, extensibility and
+      reliable cross-sheet links over unnecessary complexity.
+    </coding_principle>
+  </persona>
+
+  <scope>
+
+    <initial_companies>
+      <company id="C001">HDFC Bank</company>
+      <company id="C002">Federal Bank</company>
+      <company id="C003">AU Small Finance Bank</company>
+      <company id="C004">Indian Bank</company>
+      <company id="C005">ICICI Bank</company>
+      <company id="C006">Kotak Mahindra Bank</company>
+      <company id="C007">Max Financial Services</company>
+    </initial_companies>
+
+    <mutual_funds>
+      <fund id="MF001">
+        <name>Parag Parikh Flexi Cap Fund</name>
+        <plan>Direct</plan>
+        <option>Growth</option>
+        <holdings_policy>
+          Import all material constituents from the latest available official
+          portfolio disclosure for this exact scheme. Do not derive holdings
+          from the fund name or another scheme.
+        </holdings_policy>
+      </fund>
+      <fund id="MF002">
+        <name>HDFC Mid Cap Fund</name>
+        <plan>Direct</plan>
+        <option>Growth</option>
+        <holdings_policy>
+          Import all material constituents from the latest available official
+          portfolio disclosure for this exact scheme. Do not derive holdings
+          from the fund name or another scheme.
+        </holdings_policy>
+      </fund>
+      <rule>
+        Analyse the Direct Plan Growth variant of each fund by default.
+        Make scheme, plan and option explicit identifiers. Never combine
+        Direct and Regular plans, or Growth and IDCW options.
+      </rule>
+    </mutual_funds>
+
+    <future_sector_coverage>
+      <sector>Financial Services</sector>
+      <sector>Information Technology</sector>
+      <sector>Technology Hardware and Electronics</sector>
+      <sector>Consumer Durables</sector>
+      <sector>Consumer Staples</sector>
+      <sector>Metals and Mining</sector>
+      <sector>Defence and Aerospace</sector>
+      <sector>Industrials and Capital Goods</sector>
+      <sector>Infrastructure and Construction</sector>
+      <sector>Healthcare and Pharmaceuticals</sector>
+      <sector>Automobiles and Auto Components</sector>
+      <sector>Energy and Utilities</sector>
+      <sector>Telecommunications</sector>
+      <sector>Chemicals and Materials</sector>
+      <sector>Real Estate</sector>
+      <sector>Government-Owned and PSU Companies</sector>
+      <sector>Other Sectors</sector>
+    </future_sector_coverage>
+
+    <classification_rule>
+      Sector, industry, business model and ownership type must be separate fields.
+      Government-owned or PSU status is an ownership classification, not a
+      replacement for the company's operating sector. A government-owned bank
+      belongs to Financial Services and carries a separate PSU ownership tag.
+    </classification_rule>
+
+    <coverage_rule>
+      The seven initial companies are only the starting set. Value every material
+      equity holding in both mutual funds using an appropriate company-specific
+      valuation method. Add more company valuation modules as required.
+      Never restrict the NAV calculation to the initial seven companies.
+    </coverage_rule>
+
+  </scope>
+
+  <non_negotiable_rules>
+
+    <rule id="R001">
+      Never fabricate financial statements, prices, holdings, forward estimates,
+      analyst targets, ownership percentages, ratios or source citations.
+    </rule>
+
+    <rule id="R002">
+      Every material reported input must have a source URL or source filename,
+      reporting period, reporting date, unit and document/page reference where
+      applicable.
+    </rule>
+
+    <rule id="R003">
+      Keep imported data, reported historical data, calculated metrics, forecast
+      assumptions and model outputs separate.
+    </rule>
+
+    <rule id="R004">
+      Do not use a conventional industrial-company FCFF/WACC DCF as the primary
+      model for a bank. Use Residual Income valuation, Dividend Discount valuation
+      and bank-specific relative valuation.
+    </rule>
+
+    <rule id="R005">
+      Use an appropriate intrinsic valuation method for every business model.
+      Do not force one valuation formula onto banks, insurers, IT companies,
+      commodity businesses and industrial companies.
+    </rule>
+
+    <rule id="R006">
+      Keep official mutual-fund NAV, independently estimated fair NAV and
+      hypothetical scenario NAV as three separate outputs.
+    </rule>
+
+    <rule id="R007">
+      Every stock must have independently editable market-price and fair-value
+      scenario controls.
+    </rule>
+
+    <rule id="R008">
+      A user-defined price shock must never overwrite the original market price,
+      published fair-value estimate or raw source input.
+    </rule>
+
+    <rule id="R009">
+      An unvalued holding must remain visibly unvalued. Do not silently assign
+      it zero, assume it is correctly priced or hide it from portfolio coverage.
+    </rule>
+
+    <rule id="R010">
+      Use formulas, Excel tables, structured references, validation rules and
+      explicit audit checks. Avoid unexplained hard-coded outputs.
+    </rule>
+
+    <rule id="R011">
+      Never represent a hypothetical rebalanced portfolio as an official
+      mutual-fund portfolio or official NAV.
+    </rule>
+
+    <rule id="R012">
+      Show all material assumptions, the sensitivity of outputs to those
+      assumptions and the limitations of the chosen valuation method.
+    </rule>
+
+  </non_negotiable_rules>
+
+  <workbook_architecture>
+
+    <architecture_principle>
+      Create one Excel workbook containing multiple worksheets. Maintain
+      seven dedicated initial company-analysis worksheets, centralised master
+      tables and separate worksheets for the two mutual funds.
+    </architecture_principle>
+
+    <company_worksheets>
+      <sheet>VAL_HDFC_BANK</sheet>
+      <sheet>VAL_FEDERAL_BANK</sheet>
+      <sheet>VAL_AU_SFB</sheet>
+      <sheet>VAL_INDIAN_BANK</sheet>
+      <sheet>VAL_ICICI_BANK</sheet>
+      <sheet>VAL_KOTAK_BANK</sheet>
+      <sheet>VAL_MAX_FINANCIAL</sheet>
+    </company_worksheets>
+
+    <core_sheets>
+      <sheet>START_HERE</sheet>
+      <sheet>EXECUTIVE_DASHBOARD</sheet>
+      <sheet>MASTER_SECURITY_REGISTRY</sheet>
+      <sheet>RAW_FINANCIAL_DATA</sheet>
+      <sheet>MARKET_PRICES</sheet>
+      <sheet>HISTORICAL_METRICS</sheet>
+      <sheet>GLOBAL_ASSUMPTIONS</sheet>
+      <sheet>SECTOR_CLASSIFICATION</sheet>
+      <sheet>PEER_GROUPS</sheet>
+      <sheet>SOURCE_LOG</sheet>
+      <sheet>MISSING_DATA</sheet>
+      <sheet>SCENARIO_ANALYSIS</sheet>
+      <sheet>METRIC_DICTIONARY</sheet>
+    </core_sheets>
+
+    <fund_sheets>
+      <sheet>PPFAS_FLEXICAP_HOLDINGS</sheet>
+      <sheet>HDFC_MIDCAP_HOLDINGS</sheet>
+      <sheet>MF_NAV_CALCULATOR</sheet>
+      <sheet>MF_SCENARIO_BUILDER</sheet>
+      <sheet>MF_SECTOR_ANALYSIS</sheet>
+      <sheet>MF_NAV_SENSITIVITY</sheet>
+      <sheet>MF_COVERAGE_AUDIT</sheet>
+      <sheet>PORTFOLIO_REBALANCING</sheet>
+    </fund_sheets>
+
+    <scalability>
+      Create a standard company-valuation engine and security registry that accepts
+      new securities. The seven named companies get dedicated analysis worksheets.
+      Additional holdings must receive a valuation output through the common
+      valuation tables and appropriate sector model. Generate additional company
+      analysis worksheets from a standard template where useful.
+
+      All fund calculations must link to security IDs and valuation outputs,
+      never to a hard-coded list of company names or fixed cell positions.
+    </scalability>
+
+    <table_design>
+      Store imported financial data, historical metrics, market prices, analyst
+      assumptions, company valuations and mutual-fund positions in properly
+      structured Excel tables. Give every row a stable identifier.
+    </table_design>
+
+  </workbook_architecture>
+
+  <security_registry>
+
+    <required_fields>
+      <field>Security_ID</field>
+      <field>ISIN</field>
+      <field>Exchange_Ticker</field>
+      <field>Company_Name</field>
+      <field>Sector</field>
+      <field>Industry</field>
+      <field>Business_Model</field>
+      <field>Asset_Class</field>
+      <field>Country_or_Market</field>
+      <field>Trading_Currency</field>
+      <field>Reporting_Currency</field>
+      <field>Ownership_Type</field>
+      <field>Listing_Status</field>
+      <field>Primary_Valuation_Method</field>
+      <field>Secondary_Valuation_Method</field>
+      <field>Current_Market_Price</field>
+      <field>Market_Price_Date</field>
+      <field>Base_Fair_Value</field>
+      <field>Bear_Fair_Value</field>
+      <field>Bull_Fair_Value</field>
+      <field>Valuation_Date</field>
+      <field>Valuation_Coverage_Status</field>
+      <field>Source_Status</field>
+    </required_fields>
+
+    <unique_identifier_rule>
+      Use ISIN as the preferred security matching identifier, supplemented by
+      exchange ticker and Security_ID. Do not rely on company names alone.
+      Preserve separate security identifiers for different share classes.
+    </unique_identifier_rule>
+
+  </security_registry>
+
+  <research_and_sources>
+
+    <source_priority>
+      <tier priority="1">
+        Company annual reports, audited financial statements, quarterly results,
+        investor presentations, earnings-call transcripts, regulatory filings
+        and official stock-exchange disclosures.
+      </tier>
+      <tier priority="2">
+        RBI, SEBI, AMFI, NSE, BSE, IRDAI, relevant government departments and
+        official mutual-fund asset-management company disclosures.
+      </tier>
+      <tier priority="3">
+        Reputable market-data providers and research platforms for market prices,
+        historical multiples, consensus estimates and peer comparisons.
+      </tier>
+      <tier priority="4">
+        Secondary research and commentary, used as context rather than a
+        replacement for primary financial data.
+      </tier>
+    </source_priority>
+
+    <official_sources>
+      <source name="RBI Database on Indian Economy">https://data.rbi.org.in/</source>
+      <source name="RBI">https://www.rbi.org.in/</source>
+      <source name="SEBI">https://www.sebi.gov.in/</source>
+      <source name="AMFI">https://www.amfiindia.com/</source>
+      <source name="NSE India">https://www.nseindia.com/</source>
+      <source name="BSE India">https://www.bseindia.com/</source>
+      <source name="IRDAI">https://irdai.gov.in/</source>
+    </official_sources>
+
+    <company_sources>
+      <company>HDFC Bank official investor relations</company>
+      <company>Federal Bank official investor relations</company>
+      <company>AU Small Finance Bank official investor relations</company>
+      <company>Indian Bank official investor relations</company>
+      <company>ICICI Bank official investor relations</company>
+      <company>Kotak Mahindra Bank official investor relations</company>
+      <company>Max Financial Services official investor relations</company>
+      <requirement>
+        Discover the official source URL for each company and retain it in
+        SOURCE_LOG. Retrieve current and historical financial documents rather
+        than relying solely on secondary data aggregators.
+      </requirement>
+    </company_sources>
+
+    <fund_sources>
+      <fund_source>
+        Official portfolio disclosures, factsheets, monthly holding reports
+        and NAV history for Parag Parikh Flexi Cap Fund Direct Plan Growth.
+      </fund_source>
+      <fund_source>
+        Official portfolio disclosures, factsheets, monthly holding reports
+        and NAV history for HDFC Mid Cap Fund Direct Plan Growth.
+      </fund_source>
+      <fund_source>
+        AMFI scheme-wise portfolio disclosures for secondary verification
+        and reconciliation.
+      </fund_source>
+    </fund_sources>
+
+    <data_retrieval>
+      Retrieve approximately ten financial years of annual data and the latest
+      twenty quarters where available. For peer multiples and market prices,
+      collect a consistent historical time series where a reliable source exists.
+
+      Use the latest available official fund holdings and record the portfolio
+      reporting date. Use one clearly defined market-price date for all securities
+      being compared. Never mix market prices from different dates without
+      displaying the difference.
+    </data_retrieval>
+
+    <forward_estimates>
+      Forward EPS, forward P/E and consensus revenue or earnings estimates
+      require an attributable source, forecast period and observation date.
+      Where reliable consensus data is unavailable, calculate a clearly labelled
+      modelled forward metric using the workbook's forecast EPS or financials.
+
+      Never label a modelled estimate as analyst consensus.
+    </forward_estimates>
+
+    <source_log_fields>
+      <field>Source_ID</field>
+      <field>Entity_ID</field>
+      <field>Metric</field>
+      <field>Reported_Value</field>
+      <field>Unit</field>
+      <field>Reporting_Period</field>
+      <field>Observation_Date</field>
+      <field>Document_Name</field>
+      <field>URL_or_File_Path</field>
+      <field>Page_or_Table</field>
+      <field>Retrieval_Date</field>
+      <field>Source_Type</field>
+      <field>Destination_Table</field>
+      <field>Data_Quality_Status</field>
+    </source_log_fields>
+
+  </research_and_sources>
+
+
+  <data_feasibility_and_pipeline>
+    <pre_build_gate>
+      Before building valuation formulas, inventory every required dataset and
+      verify which sources can actually be accessed. Produce a data-feasibility
+      report before claiming the model is populated or complete.
+    </pre_build_gate>
+    <dataset_inventory_fields>
+      <field>Dataset_ID</field>
+      <field>Entity_or_Fund_ID</field>
+      <field>Metric_or_File</field>
+      <field>Preferred_Source</field>
+      <field>Backup_Source</field>
+      <field>Available_History</field>
+      <field>Latest_Observation_Date</field>
+      <field>Retrieval_Method</field>
+      <field>Refresh_Frequency</field>
+      <field>Access_or_Licensing_Constraint</field>
+      <field>Quality_Status</field>
+      <field>Missing_Data_Impact</field>
+    </dataset_inventory_fields>
+    <data_statuses>
+      <status>Retrieved and verified</status>
+      <status>Imported but not yet reconciled</status>
+      <status>Calculated from cited source data</status>
+      <status>Third-party estimate</status>
+      <status>User assumption</status>
+      <status>Unavailable</status>
+      <status>Stale</status>
+    </data_statuses>
+    <pipeline_rules>
+      Create an auditable process for importing company filings, market prices,
+      corporate actions, peer metrics and official mutual-fund disclosures.
+      Preserve the source file and import timestamp. Do not silently overwrite
+      previously imported data. Record revisions and changes to source values.
+    </pipeline_rules>
+    <access_rules>
+      Do not assume a paid data service, API, consensus estimates feed or market-data
+      subscription is available. Record access and licensing requirements. Use
+      supported sources and permitted download methods. If a source cannot be
+      accessed, leave affected metrics blank and list them in MISSING_DATA.
+    </access_rules>
+    <monthly_update_workflow>
+      Provide an import workflow for each new monthly fund portfolio disclosure.
+      Match holdings to the security registry by ISIN or stable security identifier,
+      check new and removed constituents, reconcile portfolio weights, refresh
+      associated valuation mappings and flag new securities without valuation models.
+    </monthly_update_workflow>
+    <point_in_time_data>
+      Historical backtesting must use information available as of each historical
+      valuation date. Do not use revised or subsequently published data as if it
+      had been available at the historical decision date.
+    </point_in_time_data>
+  </data_feasibility_and_pipeline>
+
+  <historical_data_requirements>
+
+    <history_period>
+      Use ten years of annual historical data and twenty quarters where available.
+      Retain original periods, reporting units and accounting basis.
+    </history_period>
+
+    <bank_income_statement>
+      <metric>Interest income</metric>
+      <metric>Interest expense</metric>
+      <metric>Net interest income</metric>
+      <metric>Non-interest income</metric>
+      <metric>Operating expenses</metric>
+      <metric>Pre-provision operating profit</metric>
+      <metric>Provisions and contingencies</metric>
+      <metric>Profit before tax</metric>
+      <metric>Net profit attributable to common shareholders</metric>
+      <metric>Basic EPS</metric>
+      <metric>Diluted EPS</metric>
+      <metric>Dividend per share</metric>
+    </bank_income_statement>
+
+    <bank_balance_sheet>
+      <metric>Gross advances</metric>
+      <metric>Total deposits</metric>
+      <metric>CASA balances and ratio</metric>
+      <metric>Term deposits</metric>
+      <metric>Investments</metric>
+      <metric>Total assets</metric>
+      <metric>Borrowings</metric>
+      <metric>Common shareholders' equity</metric>
+      <metric>Book value per share</metric>
+      <metric>Tangible book value per share</metric>
+      <metric>Diluted shares outstanding</metric>
+    </bank_balance_sheet>
+
+    <bank_risk_and_capital>
+      <metric>Gross NPA ratio</metric>
+      <metric>Net NPA ratio</metric>
+      <metric>Fresh slippages</metric>
+      <metric>Recoveries and write-offs</metric>
+      <metric>Provision coverage ratio</metric>
+      <metric>Credit cost</metric>
+      <metric>Restructured loans</metric>
+      <metric>Early delinquency measures where disclosed</metric>
+      <metric>Unsecured-credit exposure</metric>
+      <metric>Concentration of material sectoral exposures</metric>
+      <metric>Net interest margin</metric>
+      <metric>Return on assets</metric>
+      <metric>Return on equity</metric>
+      <metric>Cost-to-income ratio</metric>
+      <metric>Capital adequacy ratio</metric>
+      <metric>CET1 ratio</metric>
+      <metric>Leverage ratio</metric>
+      <metric>Liquidity Coverage Ratio</metric>
+      <metric>Net Stable Funding Ratio</metric>
+    </bank_risk_and_capital>
+
+    <other_industry_data>
+      For non-financial companies, capture revenue, revenue growth, gross profit,
+      EBITDA, EBIT, PAT, EPS, depreciation, capital expenditure, working capital,
+      operating cash flow, free cash flow, net debt, shares outstanding and
+      relevant industry-specific metrics.
+
+      For insurers, capture embedded value, value of new business, APE,
+      new-business margin, solvency and relevant operating metrics.
+
+      Do not apply bank-specific metrics to non-banks or industrial metrics
+      to banks without an economically valid reason.
+    </other_industry_data>
+
+    <normalisation>
+      Correct for share splits, bonus issues, rights issues, mergers, demergers,
+      changes in reporting periods and material accounting reclassifications.
+      Retain raw reported values and document any normalisation.
+    </normalisation>
+
+  </historical_data_requirements>
+
+
+  <asset_class_and_cross_border_support>
+    <principle>
+      Sector and industry describe what a business does. Asset class describes
+      the instrument held by a fund. Ownership type describes who controls or
+      owns the issuer. Keep these dimensions separate to prevent double counting.
+    </principle>
+    <supported_asset_classes>
+      <asset_class>Indian listed equity</asset_class>
+      <asset_class>Foreign listed equity</asset_class>
+      <asset_class>Debt securities</asset_class>
+      <asset_class>Cash and cash equivalents</asset_class>
+      <asset_class>Money-market instruments</asset_class>
+      <asset_class>Derivatives</asset_class>
+      <asset_class>REITs and InvITs where held</asset_class>
+      <asset_class>Other eligible investments</asset_class>
+    </supported_asset_classes>
+    <valuation_rules>
+      Apply methods suited to the asset class. Do not apply equity DCF to debt
+      securities or treat cash and liabilities as ordinary equity holdings.
+      For foreign assets, retain local-currency prices, the currency, FX conversion
+      rate, local market timestamp and INR valuation timestamp. Identify differences
+      caused by foreign market closing times and currency moves.
+    </valuation_rules>
+    <fund_reconciliation>
+      Reconcile all disclosed asset classes to total scheme net assets where data
+      permits. Record debt, cash, derivatives, receivables, accrued income, accrued
+      expenses and other liabilities without double counting.
+    </fund_reconciliation>
+  </asset_class_and_cross_border_support>
+
+  <valuation_engine>
+
+    <general_principle>
+      The model must produce a company-specific estimate of intrinsic value,
+      relative value and scenario value. It must not pretend that every company
+      has a single objectively correct price.
+    </general_principle>
+
+    <bank_valuation>
+
+      <primary_method>Residual Income Model</primary_method>
+      <secondary_methods>
+        <method>Dividend Discount Model</method>
+        <method>Justified price-to-book valuation</method>
+        <method>Peer-relative P/B, P/ABV and P/E valuation</method>
+      </secondary_methods>
+
+      <residual_income_formula>
+        Residual Income in year t equals Net Income in year t less beginning
+        common shareholders' equity multiplied by the cost of equity.
+      </residual_income_formula>
+
+      <equity_value_formula>
+        Equity Value equals current common equity plus the present value of
+        forecast residual income plus the present value of terminal residual income.
+      </equity_value_formula>
+
+      <ddm_formula>
+        Equity value equals the present value of forecast dividends plus the
+        present value of terminal dividends.
+      </ddm_formula>
+
+      <bank_forecast_drivers>
+        <driver>Advance growth</driver>
+        <driver>Deposit growth</driver>
+        <driver>Loan yield</driver>
+        <driver>Cost of deposits</driver>
+        <driver>Net interest margin</driver>
+        <driver>Fee and non-interest income</driver>
+        <driver>Operating expense growth</driver>
+        <driver>Credit costs</driver>
+        <driver>Tax rate</driver>
+        <driver>Net income and EPS</driver>
+        <driver>Dividend payout</driver>
+        <driver>Book value per share</driver>
+        <driver>Capital retention</driver>
+        <driver>Return on equity</driver>
+      </bank_forecast_drivers>
+
+      <bank_peer_sets>
+        <peer_set>
+          <name>Large Private-Sector Banks</name>
+          <peer>HDFC Bank</peer>
+          <peer>ICICI Bank</peer>
+          <peer>Axis Bank</peer>
+          <peer>Kotak Mahindra Bank</peer>
+          <peer>IndusInd Bank</peer>
+          <peer>Other relevant listed private-sector banks</peer>
+        </peer_set>
+        <peer_set>
+          <name>Mid-Sized Private-Sector Banks</name>
+          <peer>Federal Bank</peer>
+          <peer>IDFC FIRST Bank</peer>
+          <peer>RBL Bank</peer>
+          <peer>Bandhan Bank</peer>
+          <peer>Other relevant listed peers</peer>
+        </peer_set>
+        <peer_set>
+          <name>Small Finance Banks</name>
+          <peer>AU Small Finance Bank</peer>
+          <peer>Equitas Small Finance Bank</peer>
+          <peer>Ujjivan Small Finance Bank</peer>
+          <peer>Other listed small finance banks where comparable data is available</peer>
+        </peer_set>
+        <peer_set>
+          <name>Public-Sector Banks</name>
+          <peer>Indian Bank</peer>
+          <peer>State Bank of India</peer>
+          <peer>Bank of Baroda</peer>
+          <peer>Canara Bank</peer>
+          <peer>Other relevant listed PSU banks</peer>
+        </peer_set>
+        <peer_selection_rule>
+          Peer groups are editable. Validate active listings, current identifiers,
+          business-model comparability and reliable data availability. Show why
+          each peer is included. Do not blindly average unlike banks.
+        </peer_selection_rule>
+      </bank_peer_sets>
+
+    </bank_valuation>
+
+    <insurance_valuation>
+      <company>Max Financial Services</company>
+      <method>Insurance-focused valuation and Sum of the Parts</method>
+      <metrics>
+        <metric>Ownership interest in Axis Max Life Insurance</metric>
+        <metric>Embedded value</metric>
+        <metric>Value of new business</metric>
+        <metric>APE</metric>
+        <metric>New-business margin</metric>
+        <metric>Persistency and product mix</metric>
+        <metric>Solvency</metric>
+        <metric>Parent-company cash and debt</metric>
+        <metric>Other parent assets and liabilities</metric>
+        <metric>Diluted parent shares</metric>
+      </metrics>
+      <rule>
+        Distinguish the value of the underlying insurance business from the
+        value of the listed holding company. Avoid double-counting future
+        business value.
+      </rule>
+    </insurance_valuation>
+
+    <non_financial_valuation>
+      <methods>
+        <method>FCFF DCF with WACC</method>
+        <method>FCFE valuation where appropriate</method>
+        <method>Relative P/E and EV multiples</method>
+        <method>Industry-specific valuation methods</method>
+      </methods>
+      <industry_adaptations>
+        <industry name="Information Technology">
+          Forecast revenue growth, margins, EPS, free cash flow, client
+          concentration and relevant technology business drivers.
+        </industry>
+        <industry name="Consumer Durables">
+          Forecast volume, pricing, revenue, operating margin, working capital,
+          capital expenditure and earnings growth.
+        </industry>
+        <industry name="Metals and Mining">
+          Use normalised commodity-cycle assumptions, realised prices, production
+          volume, cost curves, capital expenditure and net debt. Stress-test
+          commodity prices rather than extrapolating peak-cycle earnings.
+        </industry>
+        <industry name="Defence and Aerospace">
+          Model order book, order inflows, execution, revenue conversion,
+          operating margins, receivables, working capital and contract risk.
+        </industry>
+        <industry name="Government-Owned Companies">
+          Select the valuation methodology based on the underlying industry.
+          Separately assess ownership structure, capital allocation, policy risk
+          and material government-related factors.
+        </industry>
+        <industry name="Industrials and Capital Goods">
+          Model order intake, order book, revenue execution, operating margins,
+          capacity, working capital and cash conversion.
+        </industry>
+      </industry_adaptations>
+    </non_financial_valuation>
+
+    <terminal_value_controls>
+      Explicitly document terminal growth, discount rate, terminal profitability,
+      capital reinvestment and terminal valuation assumptions.
+      For a Gordon-growth terminal value, terminal growth must be below the
+      applicable discount rate.
+      Show the proportion of total estimated value attributable to terminal value.
+      Flag outputs that are excessively sensitive to terminal assumptions.
+    </terminal_value_controls>
+
+    <valuation_outputs>
+      <output>Current market price</output>
+      <output>Current market capitalisation</output>
+      <output>Current valuation multiples</output>
+      <output>Forecast financials</output>
+      <output>Base-case intrinsic value</output>
+      <output>Bear-case intrinsic value</output>
+      <output>Bull-case intrinsic value</output>
+      <output>Peer-relative valuation range</output>
+      <output>Upside or downside relative to market price</output>
+      <output>Margin of safety</output>
+      <output>Expected five-year total return including dividends</output>
+      <output>Key sensitivity drivers</output>
+      <output>Source completeness and confidence indicators</output>
+    </valuation_outputs>
+
+    <expected_return_framework>
+      <principle>
+        A current valuation gap is not the same as an expected five-year return.
+        Do not assume that a market price will converge to intrinsic value within
+        the forecast period without an explicit and justified convergence assumption.
+      </principle>
+      <company_forecast>
+        Forecast the terminal equity value using an appropriate metric and exit
+        valuation approach. For banks, use relevant earnings, book-value, sustainable
+        RoE and exit P/B assumptions. For non-financial businesses, use appropriate
+        forecast cash flows, earnings and terminal valuation assumptions.
+      </company_forecast>
+      <return_components>
+        <component>Share-price change</component>
+        <component>Cash dividends</component>
+        <component>Reinvestment of dividends where applicable</component>
+        <component>Valuation multiple expansion or contraction</component>
+        <component>Transaction costs where applicable</component>
+      </return_components>
+      <calculation_rule>
+        Calculate annualised total return using dated cash flows, such as XIRR
+        where appropriate, or an explicitly documented equivalent. Clearly identify
+        whether dividends are assumed to be reinvested. Do not add annual EPS growth,
+        dividend yield and valuation changes as though the approximation were exact.
+      </calculation_rule>
+      <scenario_probabilities>
+        Allow optional user-defined bull, base and bear scenario probabilities.
+        Validate that probability weights sum to 100 percent. Show probability-weighted
+        results separately from unweighted scenarios. Do not invent probabilities.
+      </scenario_probabilities>
+    </expected_return_framework>
+
+  </valuation_engine>
+
+  <user_controlled_pricing>
+
+    <objective>
+      The user must be able to change the market price used in a scenario,
+      adjust the estimated fair value independently, or type an absolute
+      assumed price. The effect must flow automatically into the portfolio
+      calculations and all relevant charts.
+    </objective>
+
+    <price_inputs>
+      <input name="Original_Market_Price">
+        Imported market price at the selected valuation date. Locked against
+        accidental overwriting by the scenario engine.
+      </input>
+      <input name="Model_Base_Fair_Value">
+        Base-case intrinsic value from the applicable company valuation model.
+      </input>
+      <input name="Fair_Value_Bias_Percent">
+        User-editable percentage adjustment applied to the model's fair value.
+      </input>
+      <input name="Market_Price_Shock_Percent">
+        User-editable percentage change applied to the original market price
+        for a hypothetical market-price scenario.
+      </input>
+      <input name="Absolute_Scenario_Price">
+        Optional absolute price entered by the user, for example INR 590 or
+        INR 595 per share.
+      </input>
+      <input name="Market_Price_Scenario_Mode">
+        Dropdown with Original Market Price, Market Price Shock and Absolute
+        Scenario Market Price. This selector changes only the assumed market price.
+      </input>
+      <input name="Fair_Value_Scenario_Mode">
+        Dropdown with Model Base Fair Value, Fundamental Assumption Scenario
+        and Manual Fair-Value Bias. This selector changes only estimated fair value.
+      </input>
+      <input name="Required_Margin_of_Safety">
+        User-defined discount required relative to estimated fair value.
+      </input>
+    </price_inputs>
+
+    <scenario_formulas>
+      <formula name="Market_Price_After_Shock">
+        Original Market Price multiplied by one plus Market Price Shock Percent.
+      </formula>
+      <formula name="Fair_Value_After_Bias">
+        Model Base Fair Value multiplied by one plus Fair Value Bias Percent.
+      </formula>
+      <formula name="Target_Purchase_Price">
+        Model Base Fair Value multiplied by one minus Required Margin of Safety.
+      </formula>
+      <formula name="Selected_Scenario_Market_Price">
+        Resolve Market_Price_Scenario_Mode and return the selected scenario
+        market price. Preserve the original market price separately.
+      </formula>
+      <formula name="Selected_Scenario_Fair_Value">
+        Resolve Fair_Value_Scenario_Mode and return the selected model-derived
+        or explicitly overridden fair-value estimate.
+      </formula>
+      <formula name="Implied_Upside_To_Fair_Value">
+        Selected_Scenario_Fair_Value divided by Selected_Scenario_Market_Price,
+        less one. This is the market-price-to-fair-value gap, not the return
+        forecast and not a market-price shock.
+      </formula>
+      <formula name="Target_Purchase_Price">
+        Selected_Scenario_Fair_Value multiplied by one minus Required_Margin_of_Safety.
+      </formula>
+      <formula name="Fair_Value_Gap">
+        Fair Value After Bias divided by Original Market Price, less one.
+      </formula>
+    </scenario_formulas>
+
+    <worked_example>
+      <input>Original market price = INR 750</input>
+      <input>Model base fair value = INR 500</input>
+      <input>Market price shock = minus 10 percent</input>
+      <expected_output>
+        Scenario market price = INR 675.
+      </expected_output>
+      <input>Fair-value bias = minus 10 percent</input>
+      <expected_output>
+        Scenario fair value = INR 450. The scenario market price remains INR 675
+        if the market-price shock selector is active; the two controls are independent.
+      </expected_output>
+      <input>Absolute scenario market price = INR 595</input>
+      <expected_output>
+        Selected scenario market price = INR 595. The original market price,
+        base fair value and fair-value bias remain unchanged.
+      </expected_output>
+      <rule>
+        Do not conflate a market-price shock, a change in fundamental valuation
+        assumptions, a manual fair-value bias and an absolute scenario market price.
+        Each must have a separate selector and a separate output. A manually biased
+        fair value must never be labelled as an unmodified model output.
+      </rule>
+    </worked_example>
+
+    <interaction_requirements>
+      Use clearly marked input cells, dropdown selectors, number validations,
+      percentage controls and immediately recalculating formulas.
+      Use native Excel formulas and data validation. Do not rely on macros
+      or scripts for basic model calculations.
+    </interaction_requirements>
+
+    <reset_controls>
+      Include a documented method to restore imported market prices, original
+      model fair values and zero scenario biases. Do not require the user to
+      rebuild the spreadsheet after experimenting with prices.
+    </reset_controls>
+
+  </user_controlled_pricing>
+
+  <chart_interpretation_and_quality>
+    <metric_definitions>
+      Every chart and comparison table must define the metric, period, denominator,
+      units, source, observation date and whether the value is reported, calculated,
+      modelled or sourced from third-party consensus.
+    </metric_definitions>
+    <comparability>
+      Use consistent market-price dates, fiscal periods, share-count adjustments,
+      accounting bases and valuation-multiple definitions. Clearly identify when
+      peer figures or data periods are not comparable.
+    </comparability>
+    <historical_fair_value_chart_rule>
+      Do not chart historical share price against historical model fair value unless
+      historical valuations can be reconstructed using information available at each
+      historical date. If that point-in-time history is unavailable, chart today's
+      market price against today's valuation range and state the limitation.
+    </historical_fair_value_chart_rule>
+    <missing_data_rule>
+      Do not substitute zero or omit missing observations without explanation.
+      Use a visible missing-data notice and show the number of observations behind
+      each historical series.
+    </missing_data_rule>
+    <peer_group_history>
+      Record peer-group membership as of the relevant valuation date where possible.
+      Historical comparisons should avoid survivorship bias from using only companies
+      that remain listed today.
+    </peer_group_history>
+  </chart_interpretation_and_quality>
+
+  <company_metrics_and_visualisations>
+
+    <chart_principles>
+      Every material company analysis page must include charts for historical
+      performance, valuation and peer comparison.
+      Use genuine sourced data and formula-driven forecast series.
+      Do not draw a chart when its underlying data is unavailable; show an
+      explicit missing-data message instead.
+      Include chart titles, units, dates, legends and source notes.
+      Separate historical actuals from forecasts visually.
+      Use comparable dates, consistent definitions and clear reporting units.
+    </chart_principles>
+
+    <historical_growth_charts>
+      <chart id="G001">Revenue or operating income: annual and quarterly trend.</chart>
+      <chart id="G002">Revenue or relevant operating income growth: year-on-year and CAGR.</chart>
+      <chart id="G003">Net profit and earnings growth.</chart>
+      <chart id="G004">EPS history and forecast EPS.</chart>
+      <chart id="G005">Book value per share and tangible book value per share where relevant.</chart>
+      <chart id="G006">Five-year historical versus projected financial performance.</chart>
+      <chart id="G007">Actual versus forecast financial trends, with the forecast transition clearly marked.</chart>
+    </historical_growth_charts>
+
+    <valuation_charts>
+      <chart id="V001">Historical share price versus the model's fair-value range.</chart>
+      <chart id="V002">Current price, base fair value, bear value and bull value.</chart>
+      <chart id="V003">Historical P/E trend and current P/E.</chart>
+      <chart id="V004">Forward P/E trend using correctly sourced or explicitly modelled estimates.</chart>
+      <chart id="V005">Historical P/B trend.</chart>
+      <chart id="V006">Historical P/ABV trend for relevant banks.</chart>
+      <chart id="V007">Historical EV/EBITDA trend for appropriate non-financial companies.</chart>
+      <chart id="V008">Historical EV/Revenue trend for appropriate non-financial companies.</chart>
+      <chart id="V009">EPS trend compared with share-price performance.</chart>
+      <chart id="V010">Modelled earnings growth and implied valuation multiples.</chart>
+      <chart id="V011">Valuation sensitivity heatmap.</chart>
+      <chart id="V012">Bull, base and bear valuation comparison.</chart>
+    </valuation_charts>
+
+    <bank_metrics_charts>
+      <chart id="B001">NIM history and forecast.</chart>
+      <chart id="B002">RoA and RoE history and forecast.</chart>
+      <chart id="B003">Gross NPA and net NPA trends.</chart>
+      <chart id="B004">Credit cost and slippage trends.</chart>
+      <chart id="B005">Credit growth versus deposit growth.</chart>
+      <chart id="B006">CASA ratio and cost of deposits.</chart>
+      <chart id="B007">Capital adequacy and CET1 trends.</chart>
+      <chart id="B008">P/B, P/ABV and P/E comparison with comparable banks.</chart>
+      <chart id="B009">Historical versus projected earnings and book value per share.</chart>
+    </bank_metrics_charts>
+
+    <multiple_validity>
+      EV/EBITDA and EV/Revenue are generally not economically comparable or
+      meaningful valuation multiples for deposit-taking banks because their
+      balance-sheet funding and income structures differ from ordinary companies.
+
+      For bank pages, display these metrics as Not Meaningful where appropriate,
+      explain why they are not used, and prioritise P/E, P/B, P/ABV, EPS, NIM,
+      RoA and RoE.
+
+      Do not fabricate bank EV multiples simply to populate a requested chart.
+      For non-financial companies, calculate EV multiples consistently and
+      show the bridge from equity value to enterprise value.
+    </multiple_validity>
+
+    <forward_metrics>
+      Display current P/E and forward P/E separately.
+      Forward P/E must specify the forecast period and EPS definition.
+      Clearly mark analyst-consensus estimates versus model-derived forecasts.
+      Do not compare different forecast horizons as though they were equivalent.
+    </forward_metrics>
+
+  </company_metrics_and_visualisations>
+
+  <peer_comparison>
+
+    <objective>
+      Compare every initial and subsequent company against a defensible,
+      editable universe of relevant listed competitors.
+    </objective>
+
+    <bank_comparison>
+      For HDFC Bank, include an editable comparable universe containing
+      ICICI Bank, Axis Bank, State Bank of India, Kotak Mahindra Bank,
+      Federal Bank, Yes Bank, IndusInd Bank, IDFC FIRST Bank and other
+      appropriate listed banks with reliable data.
+
+      For AU Small Finance Bank, use relevant small finance banks and explain
+      differences in business model and risk.
+
+      For Indian Bank, include comparable PSU banks.
+
+      For Federal Bank and Kotak Mahindra Bank, provide suitable peer groups
+      that include comparable private-sector banks.
+
+      Select peers using business model, size, asset quality, growth profile,
+      funding franchise and profitability. Do not imply that every bank is
+      directly comparable simply because it is listed.
+    </bank_comparison>
+
+    <required_peer_metrics>
+      <metric>Share price performance</metric>
+      <metric>Revenue or operating income growth</metric>
+      <metric>EPS growth</metric>
+      <metric>Current P/E</metric>
+      <metric>Forward P/E</metric>
+      <metric>P/B</metric>
+      <metric>P/ABV</metric>
+      <metric>RoE</metric>
+      <metric>RoA</metric>
+      <metric>NIM</metric>
+      <metric>Asset-quality indicators</metric>
+      <metric>Credit growth</metric>
+      <metric>Capital adequacy</metric>
+      <metric>Enterprise multiples when economically meaningful</metric>
+    </required_peer_metrics>
+
+    <peer_visualisations>
+      <chart>Peer comparison bar chart for current P/E and forward P/E.</chart>
+      <chart>Peer comparison bar chart for P/B and P/ABV.</chart>
+      <chart>Peer comparison bar chart for EPS growth and profitability.</chart>
+      <chart>Peer comparison chart for asset quality and relevant operating ratios.</chart>
+      <chart>Historical valuation-multiple bands for the selected company and comparable peers where data permits.</chart>
+      <chart>Scatter plot of valuation multiple versus RoE, earnings growth or another relevant fundamental.</chart>
+    </peer_visualisations>
+
+    <peer_data_rules>
+      Keep peer-company metrics on a consistent valuation date.
+      Record each company's reporting period, source and methodology.
+      Show individual peers and a transparent peer median.
+      Make peer inclusion and exclusion editable.
+      Exclude invalid and economically meaningless metrics rather than silently
+      averaging them.
+    </peer_data_rules>
+
+  </peer_comparison>
+
+  <mutual_fund_portfolios>
+
+    <actual_holdings_mode>
+      <objective>
+        Calculate an estimated fair NAV for each actual mutual fund from its
+        own disclosed positions and the fair-value estimates of those positions.
+      </objective>
+
+      <fund name="Parag Parikh Flexi Cap Fund Direct Plan Growth">
+        Import and maintain its own official holdings table.
+      </fund>
+
+      <fund name="HDFC Mid Cap Fund Direct Plan Growth">
+        Import and maintain its own official holdings table.
+      </fund>
+
+      <fields>
+        <field>Fund_ID</field>
+        <field>Scheme_Name</field>
+        <field>Plan</field>
+        <field>Option</field>
+        <field>Portfolio_Date</field>
+        <field>Security_ID</field>
+        <field>ISIN</field>
+        <field>Company_Name</field>
+        <field>Sector</field>
+        <field>Industry</field>
+        <field>Asset_Class</field>
+        <field>Country_or_Market</field>
+        <field>Trading_Currency</field>
+        <field>FX_Rate_to_INR</field>
+        <field>Quantity_Held</field>
+        <field>Market_Value</field>
+        <field>Weight_Percent_of_Scheme_NAV</field>
+        <field>Current_Market_Price</field>
+        <field>Selected_Scenario_Price</field>
+        <field>Base_Fair_Value</field>
+        <field>Scenario_Fair_Value</field>
+        <field>Valuation_Coverage_Status</field>
+      </fields>
+
+      <constituent_rules>
+        Import actual disclosed holdings for each exact scheme.
+        If a security is not in a fund's actual holdings, assign it zero
+        actual exposure in that fund. Never transfer a holding from one
+        fund to another because the funds share a category or name.
+
+        A security can share one company valuation model across several funds.
+        Its quantities and portfolio weights must nevertheless remain
+        separately recorded for each fund.
+      </constituent_rules>
+    </actual_holdings_mode>
+
+    <custom_allocation_mode>
+      <objective>
+        Allow hypothetical sector allocations and user-defined constituent
+        weights for independent portfolio experiments.
+      </objective>
+
+      <sector_inputs>
+        The user must be able to define allocation weights for Financial Services,
+        IT, Consumer Durables, Metals, Defence, Industrials, Healthcare,
+        Energy, PSU-owned companies and other required classifications.
+      </sector_inputs>
+
+      <weighting>
+        Effective security weight equals sector weight as a fraction of the
+        total portfolio multiplied by constituent weight within that sector.
+      </weighting>
+
+      <example>
+        If Financial Services is 30 percent of a hypothetical portfolio and
+        one bank represents 20 percent of the Financial Services allocation,
+        that bank's effective portfolio weight is 6 percent.
+      </example>
+
+      <validation>
+        Validate category weights, constituent weights, duplicates and remaining
+        unallocated balances. Require the user to identify any cash or
+        unallocated position explicitly.
+      </validation>
+
+      <separation_rule>
+        Custom weights must never overwrite actual fund holdings. Display
+        actual holdings mode and custom allocation mode separately.
+      </separation_rule>
+    </custom_allocation_mode>
+
+  </mutual_fund_portfolios>
+
+  <mutual_fund_nav_engine>
+
+    <official_nav>
+      Retrieve the official NAV for the exact Direct Plan Growth scheme
+      from a reliable source. Retain NAV date and scheme identifier.
+    </official_nav>
+
+    <method_one>
+      <name>Weighted Valuation Adjustment</name>
+      <formula>
+        Holding Adjustment equals the holding's weight as a fraction of total
+        scheme net assets multiplied by the ratio of fair value to current
+        market price less one.
+      </formula>
+      <formula>
+        Estimated Fair NAV equals the current official NAV multiplied by
+        one plus the sum of holding valuation adjustments.
+      </formula>
+      <assumptions>
+        This is a static-portfolio approximation. The weights must refer to
+        total scheme net assets. Non-equity assets, liabilities, cash and
+        omitted positions must be handled explicitly or disclosed as limitations.
+      </assumptions>
+    </method_one>
+
+    <method_two>
+      <name>Quantity-Based Fair NAV</name>
+      <formula>
+        Estimated Fair NAV equals the sum of the quantity of each security
+        held multiplied by its selected fair value, plus other assets, minus
+        liabilities, divided by the number of scheme units outstanding.
+      </formula>
+      <requirements>
+        Where sufficient data is available, reconcile the calculated net assets
+        with the reported scheme net assets. Account for debt securities, cash,
+        derivatives, receivables, accrued expenses and other assets consistently.
+        Do not double-count positions or liabilities.
+      </requirements>
+    </method_two>
+
+    <method_three>
+      <name>Scenario Market NAV</name>
+      <formula>
+        Scenario Net Assets equal the sum of security quantities multiplied
+        by selected scenario market prices plus other assets, less liabilities.
+      </formula>
+      <formula>
+        Scenario NAV equals Scenario Net Assets divided by scheme units outstanding.
+      </formula>
+      <interpretation>
+        This calculates the modelled mark-to-market effect of the selected
+        price assumptions on a disclosed portfolio snapshot. It is not an
+        official updated NAV.
+      </interpretation>
+    </method_three>
+
+    <method_four>
+      <name>Hypothetical Rebalanced Portfolio</name>
+      <requirements>
+        Allow the user to change sector weights, constituent weights, assumed
+        buying prices and quantities for a hypothetical portfolio.
+
+        Calculate hypothetical holdings, purchase costs, cash remaining,
+        transaction costs where inputs are available, scenario asset values,
+        portfolio concentration, estimated fair value and prospective returns.
+
+        Distinguish hypothetical portfolio value from the official NAV of
+        either existing mutual fund.
+      </requirements>
+      <economic_rule>
+        Reallocating holdings alone does not create a mechanical change in
+        an existing mutual fund's NAV. At transaction time, rebalancing changes
+        positions and may incur costs, while net assets and scheme units determine
+        NAV. Model costs and subsequent scenario values explicitly.
+      </economic_rule>
+    </method_four>
+
+    <primary_outputs>
+      <output>Official NAV</output>
+      <output>Estimated base fair NAV</output>
+      <output>Estimated bear-case fair NAV</output>
+      <output>Estimated bull-case fair NAV</output>
+      <output>Scenario market NAV</output>
+      <output>Hypothetical rebalanced portfolio value</output>
+      <output>Difference from official NAV in INR per unit</output>
+      <output>Difference from official NAV as a percentage</output>
+      <output>Sector-by-sector contribution to estimated NAV difference</output>
+      <output>Portfolio valuation coverage percentage</output>
+      <output>Number and value of unvalued securities</output>
+      <output>Price-date and holdings-date warnings</output>
+    </primary_outputs>
+
+    <coverage_rules>
+      A fair NAV must not be presented as fully valued if material holdings
+      lack valuation estimates. Calculate valuation coverage using the market
+      value of positions with valid valuation outputs divided by total scheme
+      net assets.
+
+      If an unvalued holding is temporarily assumed to have no valuation
+      adjustment, label it clearly and disclose the weight affected.
+      Missing valuation data must never disappear from the dashboard.
+    </coverage_rules>
+
+  </mutual_fund_nav_engine>
+
+
+  <fund_performance_and_manager_evaluation>
+    <purpose>
+      Intrinsic valuation of current holdings is not sufficient to decide which
+      mutual fund is a better investment. Analyse the fund's historical performance,
+      risk, fees, benchmark and portfolio construction separately.
+    </purpose>
+    <benchmark_rules>
+      Retrieve the exact benchmark stated in the current scheme documents for each
+      fund. Use the appropriate total-return index where available. Do not substitute
+      a more convenient benchmark without displaying the difference and rationale.
+    </benchmark_rules>
+    <required_metrics>
+      <metric>1-year, 3-year, 5-year and 10-year returns where history permits</metric>
+      <metric>Rolling returns over documented windows</metric>
+      <metric>Excess return versus the stated benchmark</metric>
+      <metric>Volatility</metric>
+      <metric>Maximum drawdown</metric>
+      <metric>Downside deviation</metric>
+      <metric>Sharpe ratio where meaningful</metric>
+      <metric>Sortino ratio where meaningful</metric>
+      <metric>Expense ratio</metric>
+      <metric>Portfolio turnover where disclosed</metric>
+      <metric>Cash and non-equity allocation</metric>
+      <metric>Fund size and manager tenure where available</metric>
+      <metric>Concentration and common holdings across selected schemes</metric>
+    </required_metrics>
+    <cost_rules>
+      Use Direct Plan costs when analysing Direct Plan Growth. Distinguish returns
+      already reflected in NAV from any extra hypothetical transaction costs. Do
+      not deduct the expense ratio twice if the return series or NAV already reflects it.
+    </cost_rules>
+    <static_portfolio_limit>
+      A model that holds today's disclosed quantities constant is a static-portfolio
+      mark-to-model scenario. It is not a forecast of the actual actively managed
+      fund, because the manager can trade, change cash levels and replace holdings.
+      Label any future fund return based on current holdings as a static-portfolio
+      scenario unless manager activity is explicitly modelled.
+    </static_portfolio_limit>
+    <overlap_analysis>
+      Calculate common securities, overlap by market value, common sector exposures
+      and combined holdings across the two funds. Allow optional user-entered direct
+      stock holdings and other funds to calculate wider portfolio concentration.
+    </overlap_analysis>
+  </fund_performance_and_manager_evaluation>
+
+  <sector_analysis_and_charts>
+
+    <sector_allocation>
+      <chart>Actual sector allocation as a percentage of scheme net assets, using a doughnut or horizontal bar chart.</chart>
+      <chart>Actual financial-sector exposure compared with technology, consumer, metals, defence and other sectors.</chart>
+      <chart>Sector market value and sector weight comparison between the two mutual funds.</chart>
+      <chart>Custom hypothetical sector allocation versus actual fund allocation.</chart>
+      <chart>Sector valuation-adjustment contribution to estimated fair NAV, using a contribution bar or waterfall chart.</chart>
+      <chart>Sector valuation coverage showing valued, partially valued and unvalued positions.</chart>
+    </sector_allocation>
+
+    <security_concentration>
+      <chart>Top ten holdings by portfolio weight.</chart>
+      <chart>Largest positive and negative contributors to estimated NAV adjustment.</chart>
+      <chart>Direct versus look-through indirect exposure, where the user's broader investment portfolio data is available.</chart>
+    </security_concentration>
+
+    <nav_visualisations>
+      <chart>Official NAV history versus modelled fair NAV range.</chart>
+      <chart>Official NAV, base fair NAV, bear fair NAV and bull fair NAV comparison.</chart>
+      <chart>Scenario NAV under user-controlled price shocks.</chart>
+      <chart>Fund NAV sensitivity to selected sectors and material underlying holdings.</chart>
+      <chart>Valuation coverage and source freshness dashboard.</chart>
+      <chart>Hypothetical portfolio's sector and constituent weights after rebalancing.</chart>
+    </nav_visualisations>
+
+    <dynamic_charts>
+      All charts must update when the user changes market-price shocks, fair-value
+      bias percentages, absolute scenario prices, sector allocations, constituent
+      weights or forecast assumptions.
+
+      Use native Excel charts connected to tables and formula outputs.
+      Do not paste static chart images in place of functioning charts.
+    </dynamic_charts>
+
+  </sector_analysis_and_charts>
+
+  <additional_risk_analysis>
+
+    <company_risks>
+      Track material risks including leverage, debt maturities, capital
+      requirements, earnings cyclicality, customer concentration, sector
+      concentration, regulatory change, management quality and material
+      litigation where applicable.
+    </company_risks>
+
+    <portfolio_risks>
+      Calculate sector concentration, top-ten holdings concentration, single-stock
+      concentration, correlated exposures and valuation coverage.
+    </portfolio_risks>
+
+    <scenario_stress_tests>
+      Include adverse scenarios for declining earnings, lower profitability,
+      higher funding costs, rising bank credit costs, sector multiple contraction,
+      commodity-price declines and slower growth where relevant.
+    </scenario_stress_tests>
+
+    <uncertainty>
+      Report valuation ranges and scenario outcomes rather than relying solely
+      on one point estimate. Record the assumptions that have the largest
+      impact on intrinsic value.
+    </uncertainty>
+
+  </additional_risk_analysis>
+
+  <formatting_and_colour_coding>
+
+    <font_conventions>
+      <convention>
+        Blue font: manually entered values, user-editable assumptions and scenario controls.
+      </convention>
+      <convention>
+        Black font: formulas calculated within the same worksheet.
+      </convention>
+      <convention>
+        Green font: linked formulas referencing another worksheet or an approved external source link.
+      </convention>
+      <convention>
+        Grey font or light-grey fill: imported historical data and immutable source observations.
+      </convention>
+      <convention>
+        Purple font or restrained purple fill: user-defined scenario overrides and hypothetical portfolio inputs.
+      </convention>
+    </font_conventions>
+
+    <status_colours>
+      <status name="PASS">Green conditional formatting.</status>
+      <status name="WARNING">Amber conditional formatting.</status>
+      <status name="FAIL">Red conditional formatting.</status>
+      <status name="MISSING">Light-red or grey conditional formatting, with explanatory text.</status>
+      <status name="STALE">Amber conditional formatting based on configurable age thresholds.</status>
+    </status_colours>
+
+    <financial_model_style>
+      Use a restrained institutional financial-model design with consistent
+      fonts, number formats, decimal precision, units, borders and spacing.
+
+      Freeze header rows on tables. Use Excel filters and structured references.
+      Avoid excessive merged cells, excessive colour fills, 3D charts and
+      decorative graphics that make analysis difficult.
+    </financial_model_style>
+
+    <cell_formatting>
+      Display currency with INR symbols or clearly stated units.
+      Display percentages consistently.
+      Display negative values in parentheses where appropriate.
+      Display valuation multiples using the times notation.
+      Display source date and reporting period beside material figures.
+      Use conditional formatting for valuation gaps and risk indicators.
+    </cell_formatting>
+
+    <colour_safety>
+      Do not rely on colour alone to convey PASS, WARNING, FAIL or missing data.
+      Include explicit text or icons alongside conditional formatting.
+    </colour_safety>
+
+  </formatting_and_colour_coding>
+
+  <user_experience>
+
+    <dashboard_controls>
+      Include clearly visible selectors for:
+      - Mutual fund scheme
+      - Plan and option
+      - Actual holdings or custom allocation mode
+      - Valuation date
+      - Market-price scenario mode
+      - Selected sector
+      - Selected company
+      - Bear, base or bull assumptions
+    </dashboard_controls>
+
+    <editable_inputs>
+      Make user-input cells visibly different from formula cells.
+      Apply data validation to percentages, prices, dates, security identifiers
+      and dropdowns.
+      Protect formulas against accidental edits where practical while leaving
+      the intended input cells editable.
+    </editable_inputs>
+
+    <immediate_feedback>
+      Changing an input price, bias percentage, selected fair value or category
+      weight must recalculate all dependent formula outputs and charts.
+      Provide clear instructions for restoring base assumptions and resetting
+      custom scenarios.
+    </immediate_feedback>
+
+    <navigation>
+      Add worksheet navigation links from START_HERE and the executive dashboard
+      to company valuations, source tables, fund holdings and the NAV calculator.
+    </navigation>
+
+  </user_experience>
+
+  <validation_and_quality_assurance>
+
+    <financial_checks>
+      <check>Financial units and currency consistency.</check>
+      <check>Share count and corporate-action adjustments.</check>
+      <check>Balance-sheet and capital reconciliations where data permits.</check>
+      <check>Consistent standalone or consolidated accounting basis.</check>
+      <check>Correct valuation formula signs and discounting periods.</check>
+      <check>Terminal growth below terminal discount rate.</check>
+      <check>Appropriate business-model valuation method.</check>
+      <check>Correct current and forward valuation multiples.</check>
+      <check>Correct diluted share-count treatment.</check>
+    </financial_checks>
+
+    <portfolio_checks>
+      <check>Duplicate ISIN or security ID detection.</check>
+      <check>Fund-specific holdings are reconciled against the applicable source file.</check>
+      <check>Actual fund holdings are not contaminated by custom portfolio inputs.</check>
+      <check>Sector weights reconcile to actual or explicitly unallocated assets.</check>
+      <check>Constituent weights reconcile within each sector.</check>
+      <check>Valuation coverage and unvalued weights are disclosed.</check>
+      <check>Holdings, market-price and valuation dates are visible.</check>
+      <check>Fair NAV and scenario NAV are not labelled as official NAV.</check>
+      <check>Hypothetical rebalancing is kept separate from the original fund.</check>
+    </portfolio_checks>
+
+    <manual_test_cases>
+      <test_case>
+        Change a stock's market price from INR 750 to a scenario price of INR 675
+        using a minus 10 percent market-price shock. Verify that the base fair
+        value remains unchanged.
+      </test_case>
+      <test_case>
+        Change the stock's base fair value from INR 500 to an adjusted fair
+        value of INR 450 using a minus 10 percent fair-value bias. Verify
+        that the original fair value remains unchanged.
+      </test_case>
+      <test_case>
+        Enter an absolute scenario price of INR 595. Verify that the selected
+        pricing mode applies INR 595 without modifying imported market data.
+      </test_case>
+      <test_case>
+        Add a hypothetical constituent at a defined sector and constituent
+        weight. Verify that only the custom allocation scenario changes.
+      </test_case>
+      <test_case>
+        Change a holding's fair value and verify that its contribution to the
+        correct fund's estimated fair NAV changes according to its actual weight.
+      </test_case>
+      <test_case>
+        Confirm that an absent security contributes zero actual exposure to
+        the relevant fund.
+      </test_case>
+      <test_case>
+        Introduce a holding without a valuation. Verify that coverage decreases
+        and a visible warning appears.
+      </test_case>
+      <test_case>
+        Change a sector price scenario and verify that all sector charts,
+        security contributions and appropriate NAV scenarios recalculate.
+      </test_case>
+    </manual_test_cases>
+
+    <formula_audit>
+      Inspect formula errors, circular references, broken links, stale values,
+      invalid assumptions and inconsistent units.
+
+      Where possible, test formulas against independently computed examples.
+      Do not mark a test as passed unless it has actually been executed.
+    </formula_audit>
+
+  </validation_and_quality_assurance>
+
+  <historical_model_validation>
+    <purpose>
+      Passing formula checks does not prove that a valuation method is useful.
+      Evaluate forecast accuracy, sensitivity and historical decision performance.
+    </purpose>
+    <backtesting_rules>
+      Select historical valuation dates and use only information available on each
+      date. Do not use current financial data, later restatements or later-known
+      analyst estimates in a historical test unless they were actually available then.
+    </backtesting_rules>
+    <tests>
+      <test>Compare historical forecast revenue, profit, EPS, margins and other key drivers with subsequently reported outcomes where past forecasts exist.</test>
+      <test>Compare modelled valuation signals with subsequent one-year, three-year and five-year total returns where sufficient point-in-time data exists.</test>
+      <test>Compare any hypothetical strategy with an appropriate total-return benchmark.</test>
+      <test>Include dividends and reasonable transaction-cost assumptions in hypothetical strategy returns.</test>
+      <test>Account for delisted, merged, suspended or otherwise unavailable securities to reduce survivorship bias.</test>
+      <test>Report the number of observations, coverage gaps and limitations of each backtest.</test>
+    </tests>
+    <interpretation>
+      Historical performance does not prove future predictive power. Report results
+      as diagnostics and avoid tuning assumptions solely to maximise historical returns.
+    </interpretation>
+  </historical_model_validation>
+
+  <model_governance>
+    <sheet>MODEL_GOVERNANCE</sheet>
+    <fields>
+      <field>Model_Version</field>
+      <field>Valuation_Date</field>
+      <field>Source_Data_Cutoff</field>
+      <field>Methodology_Version</field>
+      <field>Assumption_ID</field>
+      <field>Assumption_Source_Type</field>
+      <field>Override_Original_Value</field>
+      <field>Override_New_Value</field>
+      <field>Override_Reason</field>
+      <field>Override_Date</field>
+      <field>Last_Formula_Test_Date</field>
+      <field>Test_Status</field>
+      <field>Last_Validated_Date</field>
+    </fields>
+    <change_log>
+      Log changes to valuation formulas, peer groups, source data, assumptions and
+      manual overrides. Preserve original raw observations. Do not claim a model
+      or test is validated unless it has actually been run.
+    </change_log>
+    <confidence_reporting>
+      Keep data confidence separate from valuation confidence. Define the components
+      of any confidence label; do not create an unexplained weighted confidence score.
+      Report data coverage, input freshness, model sensitivity and uncertainty explicitly.
+    </confidence_reporting>
+    <recalculation_check>
+      Confirm that changes to user inputs recalculate dependent formulas and charts.
+      Provide a documented reset process. Flag calculation mode, broken references,
+      external links and formula errors.
+    </recalculation_check>
+  </model_governance>
+
+  <implementation_sequence>
+
+    <phase number="1">
+      <name>Source feasibility and data architecture</name>
+      Inventory required datasets, official holdings, prices, company filings and
+      data access constraints. Create the security registry, source log, raw-data
+      tables, data completeness checks and governance log. Do not build large
+      valuation dashboards before confirming the availability and structure of data.
+    </phase>
+
+    <phase number="2">
+      <name>One complete bank valuation path</name>
+      Build the full HDFC Bank model, including historicals, forecasts, Residual
+      Income valuation, DDM, relative valuation, sensitivity analysis, scenario
+      controls and key charts. Independently check its formulas and source data.
+    </phase>
+
+    <phase number="3">
+      <name>One end-to-end actual fund calculation</name>
+      Select a security confirmed to exist in one selected fund's actual portfolio.
+      Link its validated valuation to the fund's holdings table, calculate its
+      weighted adjustment, roll the result into modelled intrinsic value per unit
+      and test user-controlled price scenarios. Reconcile and document the method.
+    </phase>
+
+    <phase number="4">
+      <name>Scale across initial companies and funds</name>
+      Replicate the validated banking template for the other banks. Build the
+      separate Max Financial insurance valuation. Import and independently validate
+      both Direct Plan Growth portfolios, covering all material holdings.
+    </phase>
+
+    <phase number="5">
+      <name>Sector and industry valuation templates</name>
+      Add sector-specific valuation engines required by the actual fund constituents,
+      including IT, consumer, metals, defence, industrials and other sectors. Do not
+      build unused sector templates in preference to valuing actual material holdings.
+    </phase>
+
+    <phase number="6">
+      <name>Portfolio controls, performance and dynamic charts</name>
+      Implement actual holdings mode, custom allocation mode, market-price shocks,
+      fundamental assumption scenarios, fair-value bias, absolute price overrides,
+      target rebalancing, benchmark returns, risk metrics and formula-driven charts.
+    </phase>
+
+    <phase number="7">
+      <name>Historical validation and governance</name>
+      Run formula tests, historical diagnostics, data-completeness checks, price/date
+      reconciliation and model-governance checks. Provide a source report, missing-data
+      report, executed-test report, README and explicit limitations.
+    </phase>
+
+  </implementation_sequence>
+
+  <completion_criteria>
+
+    <criterion>
+      Seven dedicated company valuation worksheets exist and link to the shared
+      security registry and summary outputs.
+    </criterion>
+
+    <criterion>
+      The two Direct Plan Growth schemes have independent, source-backed
+      constituent tables that can be updated without redesigning the workbook.
+    </criterion>
+
+    <criterion>
+      All material holdings across both funds have a valuation status and
+      an appropriate valuation method or an explicit missing-data warning.
+    </criterion>
+
+    <criterion>
+      User-controlled market-price shocks, fair-value bias percentages and
+      absolute scenario prices operate independently and recalculate linked
+      portfolio outputs.
+    </criterion>
+
+    <criterion>
+      The workbook distinguishes actual official NAV, estimated fair NAV,
+      scenario market NAV and hypothetical rebalanced portfolio value.
+    </criterion>
+
+    <criterion>
+      Sector allocation, growth, earnings, valuation multiples, peer comparisons,
+      sensitivity analyses and fund NAV scenarios are represented through
+      functioning Excel charts.
+    </criterion>
+
+    <criterion>
+      Every chart is linked to real formula outputs or sourced data, not static images.
+    </criterion>
+
+    <criterion>
+      The workbook includes source traceability, missing-data warnings,
+      valuation coverage and executed validation results.
+    </criterion>
+
+    <criterion>
+      A new security from any supported sector can be added and incorporated
+      into the correct fund-level calculation without rewriting the NAV engine.
+    </criterion>
+
+    <criterion>
+      Official NAV, modelled intrinsic value per unit, scenario market NAV and
+      hypothetical rebalanced portfolio value are clearly separated throughout.
+    </criterion>
+    <criterion>
+      Market-price shock, fundamental assumption change, manual fair-value bias
+      and absolute scenario price are independent controls with separate outputs.
+    </criterion>
+    <criterion>
+      The data-feasibility audit identifies available, missing, stale, derived,
+      third-party and user-entered data before the model is declared complete.
+    </criterion>
+    <criterion>
+      A complete end-to-end test has been executed from one company's valuation
+      through an actual fund holding to the estimated intrinsic value per unit.
+    </criterion>
+    <criterion>
+      Fund performance versus its stated benchmark, rolling returns, risk measures,
+      fees and common holdings are included where reliable data is available.
+    </criterion>
+    <criterion>
+      Historical model testing is point-in-time-aware and reports look-ahead bias,
+      survivorship bias, forecast errors, sample sizes and limitations.
+    </criterion>
+    <criterion>
+      Every key assumption and manual override is traceable through a model-governance
+      log with original value, revised value, reason and date.
+    </criterion>
+  </completion_criteria>
+
+  <final_instruction>
+    First inspect all supplied files and identify which required sources are
+    available and which are missing. Produce the data-feasibility audit before
+    building valuation outputs. Then build the workbook in the ordered phases.
+
+    The first acceptance test is one fully validated bank valuation linked to an
+    actual holding in one of the two actual Direct Plan Growth funds, followed by
+    a working fund-level modelled intrinsic value calculation and independently
+    adjustable market-price and fair-value scenarios.
+
+    Make a best effort to deliver a functioning, formula-driven Excel workbook
+    with auditable calculations and clear documentation. Do not fabricate data
+    to create the appearance of completeness. If a live data source, consensus
+    estimate or portfolio disclosure cannot be accessed, leave the affected
+    field explicitly unpopulated, record the gap and explain its impact.
+
+    The result must allow the user to trace each estimated mutual-fund fair NAV
+    back through the fund's actual holdings, sector and company valuations,
+    model assumptions, market-price scenarios and source documents.
+  </final_instruction>
+
+</project_specification>

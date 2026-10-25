@@ -1,0 +1,3 @@
+Peer_Group_ID,Metric_ID,Exclude_Security_ID,Median,N_Valid,N_Excluded,Min,Max
+PG_SYNTH,PB,S90001,2.5,4,1,1.5,3.5
+PG_SYNTH,PE_TRAILING,S90001,15.0,4,1,10.0,20.0

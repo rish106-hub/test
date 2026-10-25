@@ -1,0 +1,6 @@
+Security_ID,Entity_ID,ISIN,Exchange_Ticker,Company_Name,Sector,Industry,Business_Model,Asset_Class,Country_or_Market,Trading_Currency,Reporting_Currency,Ownership_Type,Listing_Status,Primary_Valuation_Method,Secondary_Valuation_Method,Dedicated_Sheet,Source_Status,Source_ID
+S90001,E9001,SYNTH0090001,SYN1,SYNTHETIC Bank Alpha,Financial Services,,Deposit-taking bank,Indian listed equity,India,INR,INR,Private,Listed,Residual Income,,VAL_HDFC_BANK,SYNTHETIC TEST FIXTURE,SRC-SYNTH-000001
+S90002,E9002,SYNTH0090002,SYN2,SYNTHETIC Bank Beta,Financial Services,,Deposit-taking bank,Indian listed equity,India,INR,INR,Government-owned (PSU),Listed,Residual Income,,,SYNTHETIC TEST FIXTURE,SRC-SYNTH-000001
+S90003,E9003,SYNTH0090003,SYN3,SYNTHETIC Industrial Gamma,Industrials and Capital Goods,,Non-financial operating company,Indian listed equity,India,INR,INR,Private,Listed,None,,,SYNTHETIC TEST FIXTURE,SRC-SYNTH-000001
+S90004,E9004,SYNTH0090004,SYN4,SYNTHETIC Software Delta Inc,Information Technology,,Non-financial operating company,Foreign listed equity,United States,USD,USD,Private,Listed,FCFF DCF (WACC),,,SYNTHETIC TEST FIXTURE,SRC-SYNTH-000001
+S90005,E9005,SYNTH0090005,SYN5,SYNTHETIC Bank Epsilon,Financial Services,,Deposit-taking bank,Indian listed equity,India,INR,INR,Private,Listed,Residual Income,,,SYNTHETIC TEST FIXTURE,SRC-SYNTH-000001

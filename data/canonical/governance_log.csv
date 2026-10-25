@@ -1,0 +1,2 @@
+Change_ID,Change_Type,Model_Version,Valuation_Date,Source_Data_Cutoff,Methodology_Version,Assumption_ID,Assumption_Source_Type,Override_Original_Value,Override_New_Value,Override_Reason,Override_Date,Last_Formula_Test_Date,Test_Status,Last_Validated_Date,Changed_By
+CHG-0001,Formula,0.1.0,,,contract v1.0,,,,,Architecture contract v1.0 frozen for worker wave 1; no formulas validated yet,,,NOT RUN,,00-main

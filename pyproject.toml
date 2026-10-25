@@ -1,0 +1,21 @@
+[project]
+name = "indian-equity-valuation-mf-nav"
+version = "0.1.0"
+description = "Generator, reference math and validation harness for the Indian Equity Valuation and MF NAV workbook"
+requires-python = ">=3.11"
+dependencies = [
+  "xlsxwriter>=3.2",
+  "openpyxl>=3.1",
+  "pandas>=2.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+  "owner(name): worktree that owns the implementation under test",
+  "workbook: requires a generated workbook and LibreOffice recalculation",
+]

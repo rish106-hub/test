@@ -1,0 +1,8 @@
+Entity_ID,Company_Name,Dedicated_Sheet,Sector,Business_Model,Ownership_Type,Primary_Valuation_Method,Peer_Group_ID,Classification_Status
+C001,HDFC Bank,VAL_HDFC_BANK,Financial Services,Deposit-taking bank,Private,Residual Income,PG_LARGE_PVT,User assumption
+C002,Federal Bank,VAL_FEDERAL_BANK,Financial Services,Deposit-taking bank,Private,Residual Income,PG_MID_PVT,User assumption
+C003,AU Small Finance Bank,VAL_AU_SFB,Financial Services,Small finance bank,Private,Residual Income,PG_SFB,User assumption
+C004,Indian Bank,VAL_INDIAN_BANK,Financial Services,Deposit-taking bank,Government-owned (PSU),Residual Income,PG_PSU,User assumption
+C005,ICICI Bank,VAL_ICICI_BANK,Financial Services,Deposit-taking bank,Private,Residual Income,PG_LARGE_PVT,User assumption
+C006,Kotak Mahindra Bank,VAL_KOTAK_BANK,Financial Services,Deposit-taking bank,Private,Residual Income,PG_LARGE_PVT,User assumption
+C007,Max Financial Services,VAL_MAX_FINANCIAL,Financial Services,Insurance holding company,Private,Insurance SOTP,PG_INSURANCE,User assumption

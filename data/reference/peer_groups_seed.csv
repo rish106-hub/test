@@ -1,0 +1,6 @@
+Peer_Group_ID,Peer_Group_Name,Seed_Members_From_Spec,Notes
+PG_LARGE_PVT,Large Private-Sector Banks,HDFC Bank;ICICI Bank;Axis Bank;Kotak Mahindra Bank;IndusInd Bank,Spec <bank_peer_sets>. HDFC Bank's universe also lists SBI; Federal Bank; Yes Bank; IDFC FIRST Bank (spec <bank_comparison>)
+PG_MID_PVT,Mid-Sized Private-Sector Banks,Federal Bank;IDFC FIRST Bank;RBL Bank;Bandhan Bank,Spec <bank_peer_sets>
+PG_SFB,Small Finance Banks,AU Small Finance Bank;Equitas Small Finance Bank;Ujjivan Small Finance Bank,Spec <bank_peer_sets>; explain business-model differences
+PG_PSU,Public-Sector Banks,Indian Bank;State Bank of India;Bank of Baroda;Canara Bank,Spec <bank_peer_sets>
+PG_INSURANCE,Listed Life Insurers and Holdcos,,Not in spec; 04-charts proposes members with rationale (no blind averaging)

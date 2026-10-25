@@ -1,0 +1,78 @@
+# Machine-readable ownership map. Enforced by tools/check_ownership.py (paths)
+# and src/common/workbook.py (sheets). Edited only by 00-main.
+#
+# A worker may create or modify only files matching its `paths`, and may create
+# only the worksheets in its `sheets`. Everything else is read-only for that worker.
+# Changes to another owner's files go through spec/change_requests/.
+
+[workers."00-main"]
+role = "Architecture + integration (this session after hand-off)"
+paths = [
+  "CLAUDE.md", "README.md", "pyproject.toml", "requirements.txt", ".gitignore",
+  "spec/**", "src/__init__.py", "src/common/**", "build/**", "tools/**",
+  "data/reference/**", "data/README.md", "tests/conftest.py", "tests/test_common_*.py",
+  "tests/__init__.py",
+  "data/canonical/governance_log.csv", "docs/**",
+]
+sheets = [
+  "START_HERE", "EXECUTIVE_DASHBOARD", "GLOBAL_ASSUMPTIONS", "METRIC_DICTIONARY",
+  "MODEL_GOVERNANCE", "VALIDATION_CHECKS",
+]
+
+[workers."01-data"]
+role = "Data and source audit"
+paths = [
+  "src/ingestion/**", "data/raw/**", "data/canonical/**", "data/source_manifest.csv",  # minus files owned more specifically below
+  "tests/ingestion/**", "reports/data/**",
+]
+sheets = [
+  "MASTER_SECURITY_REGISTRY", "RAW_FINANCIAL_DATA", "MARKET_PRICES", "SECTOR_CLASSIFICATION",
+  "SOURCE_LOG", "MISSING_DATA", "DATA_FEASIBILITY",
+]
+
+[workers."02-valuation"]
+role = "Bank and insurance valuation"
+paths = [
+  "src/valuations/**", "tests/valuations/**", "data/canonical/assumptions.csv", "reports/valuation/**",
+]
+sheets = [
+  "VAL_HDFC_BANK", "VAL_FEDERAL_BANK", "VAL_AU_SFB", "VAL_INDIAN_BANK", "VAL_ICICI_BANK",
+  "VAL_KOTAK_BANK", "VAL_MAX_FINANCIAL", "VALUATION_ASSUMPTIONS", "VALUATION_OUTPUTS",
+  "HISTORICAL_METRICS",
+]
+# Template-generated company sheets for additional holdings (spec <scalability>).
+sheet_prefixes = ["VAL_"]
+
+[workers."03-nav"]
+role = "Mutual-fund NAV engine and scenario controls"
+paths = [
+  "src/scenarios/**", "src/fund_nav/**", "tests/fund_nav/**", "tests/scenarios/**",
+  "data/scenarios/**", "reports/nav/**",
+]
+sheets = [
+  "SCENARIO_ANALYSIS", "PPFAS_FLEXICAP_HOLDINGS", "HDFC_MIDCAP_HOLDINGS", "MF_NAV_CALCULATOR",
+  "MF_SCENARIO_BUILDER", "MF_SECTOR_ANALYSIS", "MF_NAV_SENSITIVITY", "MF_COVERAGE_AUDIT",
+  "PORTFOLIO_REBALANCING", "FUND_PERFORMANCE",
+]
+
+[workers."04-charts"]
+role = "Charts and peer comparisons"
+paths = [
+  "src/peers/**", "src/charts/**", "tests/peers/**", "tests/charts/**",
+  "data/canonical/peer_membership.csv", "data/canonical/peer_metrics.csv",
+]
+sheets = ["PEER_GROUPS"]
+# 04-charts draws into chart zones that other sheet owners reserve (D-017).
+
+[workers."05-qa"]
+role = "Independent reviewer"
+paths = ["tests/independent/**", "tests/workbook/**", "qa/**"]
+sheets = []
+
+# Paths no worker may edit, including their owners, without a change request.
+[frozen]
+paths = ["tests/contract/**", "tests/fixtures/**"]
+
+# Paths any worker may add to (change requests).
+[shared]
+paths = ["spec/change_requests/CR-*.md"]

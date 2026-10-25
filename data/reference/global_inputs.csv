@@ -1,0 +1,19 @@
+Name,Value,Value_Type,Unit,Description,Allowed_Values,Assumption_Source_Type,Source_ID,Rationale
+in_Valuation_Date,,date,date,Common valuation date for every security and fund,,User assumption,,Set by 00-main to the latest date for which prices; NAVs and holdings reconcile (spec <valuation_date>)
+in_Price_Date,,date,date,Single market-price date used for all compared securities,,User assumption,,Spec <data_retrieval>: one price date; never mix dates silently
+in_Global_Case,Base,text,case,Default fundamental case for Fundamental Assumption Scenario mode,Bear;Base;Bull,User assumption,,Model default
+in_Global_Price_Shock_Pct,0,decimal,decimal,Market-wide price shock applied in Market Price Shock mode,,User assumption,,Default no shock (contract §6)
+in_Default_MoS,0.20,decimal,decimal,Default required margin of safety for target purchase prices,,User assumption,,Placeholder preference; replace with your own. Not derived from data
+in_Risk_Free_Rate,,decimal,decimal,10-year Government of India security yield at in_Valuation_Date,,Unavailable,,To be sourced by 01-data from RBI/CCIL; blank keeps cost of equity blank
+in_Equity_Risk_Premium,,decimal,decimal,Indian equity risk premium,,User assumption,,To be set by 02-valuation with a documented rationale; never defaulted silently
+in_TV_Share_Warn,0.75,decimal,decimal,Terminal-value share above which a valuation is flagged WARNING,,User assumption,,Contract §10 TV-3 governance threshold
+in_Coverage_Warn,0.90,decimal,decimal,Equity valuation coverage below which fair NAV is WARNING,,User assumption,,Contract §7.5 governance threshold
+in_Coverage_Fail,0.75,decimal,decimal,Equity valuation coverage below which fair NAV is FAIL,,User assumption,,Contract §7.5 governance threshold
+in_Recon_Tolerance_Pct,0.005,decimal,decimal,Max relative gap between computed and reported scheme net assets,,User assumption,,Contract §7.3
+in_Weight_Sum_Tol,0.005,decimal,decimal,Tolerance on disclosed weights summing to 100%,,User assumption,,Rounding in AMC disclosures
+in_Holdings_Stale_Days,45,int,days,Holdings older than this vs in_Price_Date are STALE,,User assumption,,Monthly disclosures arrive ~10 days after month end
+in_Price_Stale_Days,3,int,days,Price observations older than this vs in_Price_Date are STALE,,User assumption,,Allows for exchange holidays
+in_Peer_Min_N,3,int,count,Minimum valid peers before a peer median is used without WARNING,,User assumption,,Contract §3.5
+in_Clean_Surplus_Tol,0.005,decimal,decimal,Tolerance for the clean-surplus capital retention check,,User assumption,,Contract §3.6
+in_Default_TC_Pct,,decimal,decimal,Transaction cost for hypothetical trades,,User assumption,,Blank until entered; hypothetical costs are user inputs (spec method four)
+in_Hypo_Capital_INR,,decimal,INR,Capital for the hypothetical rebalanced portfolio,,User assumption,,Blank until entered

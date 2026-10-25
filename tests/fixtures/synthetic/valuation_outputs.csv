@@ -1,0 +1,5 @@
+Security_ID,Valuation_Date,Anchor_Date,Primary_Method,Secondary_Methods,FV_Base_INR,FV_Bear_INR,FV_Bull_INR,Terminal_Value_Share_Base,Terminal_Flag,Peer_Flag,Valuation_Coverage_Status,Model_Sheet,Methodology_Version,Data_Confidence_Note
+S90001,2026-10-23,2026-03-31,Residual Income,,500.0,400.0,600.0,0.33,PASS,PASS,MODEL_VALUED,FIXTURE,fixture,SYNTHETIC
+S90002,2026-10-23,2026-03-31,Residual Income,,120.0,90.0,150.0,0.33,PASS,PASS,MODEL_VALUED,FIXTURE,fixture,SYNTHETIC
+S90003,2026-10-23,2026-03-31,None,,,,,,,,UNVALUED,FIXTURE,fixture,SYNTHETIC
+S90004,2026-10-23,2026-03-31,FCFF DCF (WACC),,37400.0,32300.0,42500.0,0.33,PASS,PASS,MODEL_VALUED,FIXTURE,fixture,SYNTHETIC
