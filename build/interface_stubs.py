@@ -5,6 +5,10 @@
 (tbl_Registry, tbl_ValuationOutputs, ...) is stubbed here from the synthetic
 fixtures, so 03-nav's formulas resolve and recalculate in LibreOffice without the
 other workers' code.
+
+The full test build (no --only) stubs the interfaces of every module that is not
+implemented yet, so the integration branch builds whatever subset has merged (D-030).
+A production build never stubs: a missing interface fails at close().
 """
 from __future__ import annotations
 

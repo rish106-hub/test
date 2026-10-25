@@ -135,13 +135,13 @@ Run against `build/out/*.xlsx` after `build/recalc.py`. Every W test writes a ro
 | W-08 | The five value outputs carry their `OutputLabel` captions; nothing labelled "NAV" shows a fair or scenario value without its caption | label scan |
 | W-09 | A production build contains no `SYNTHETIC` text and no `SRC-SYNTH` IDs | value scan |
 | W-10a–h | **Spec manual tests 1–8 executed on the workbook**: perturb input cells in a copy (openpyxl), recalculate, and assert the output changes in T-PRC-01/02/03, T-CUS-03, T-NAV-08/09/10, T-PRC-05. First prove that an unperturbed openpyxl round trip recalculates to identical values, because openpyxl drops charts but must keep formulas, tables and names | perturbation harness |
-| W-11 | Reset: with all controls at default, Scenario Market NAV = Official NAV for every plan, and `Controls_At_Default = TRUE` | recalc |
+| W-11 | Reset: with all controls at default, Scenario Market NAV = Official NAV for every plan, and `out_Controls_At_Default = TRUE` | recalc |
 | W-12 | EXECUTIVE_DASHBOARD shows the coverage caption, unvalued count/weight and holdings-date/price-date warnings for every plan | value scan |
 | W-13 | Every chart's series refer to cell ranges, not images; every chart has title, units and source note; charts with too few data points are replaced by a missing-data notice | `xl/charts/*.xml` |
 | W-14 | Terminal controls: no Gordon cell with g ≥ r shows a number; TV share is present for every valued security | recalc |
 | W-15 | Blank propagation: every cross-table link whose source column can be blank uses `link_patterns.blank_safe` | formula scan |
 | W-16 | Units: a sample of `MV_Mkt_INR_Cr` re-derived from quantity × price / 1e7; per-share values re-derived from crore / shares | recalc |
-| W-17 | Shocks apply once (D-024): `in_Global_Price_Shock_Pct`, `tbl_SectorShocks` and `Market_Price_Shock_Pct` are referenced only by `tbl_PriceControls[Effective_Shock_Pct]`; every downstream scenario price links to `Selected_Scenario_Market_Price` | formula dependency scan |
+| W-17 | Shocks apply once (D-024, D-029): `in_Global_Price_Shock_Pct`, `tbl_SectorShocks` and `Market_Price_Shock_Pct` are referenced only by `tbl_PriceControls[Effective_Shock_Pct]`, `tbl_PriceControls[Control_Warning]` and 03-nav's reset-check tables (`tbl_Nav_*`); no formula outside `Effective_Shock_Pct` that reads them feeds a price; every downstream scenario price links to `Selected_Scenario_Market_Price` | formula dependency scan |
 | W-18 | The three data-quality measures (D-026) appear separately on EXECUTIVE_DASHBOARD for every plan, each with its own status; no composite score exists | value scan |
 | W-19 | Dates: every `BV_Reported_At_Anchor_INR` display carries "as of <Anchor_Date>"; every value derived for V is captioned "estimate" (D-025) | label scan |
 

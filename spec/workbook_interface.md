@@ -24,6 +24,7 @@ These are the **only** things a module may reference in another module's sheets.
 | `tbl_RawFinancials` | 01-data | RAW_FINANCIAL_DATA | 02, 04 | Observation_ID |
 | `tbl_ValuationOutputs` | 02-valuation | VALUATION_OUTPUTS | 03, 04 | Security_ID |
 | `out_<SID>_FV_Base`, `_FV_Bear`, `_FV_Bull`, `_TV_Share` | 02-valuation | VAL_* | VALUATION_OUTPUTS only | — |
+| `out_Controls_At_Default` | 03-nav | SCENARIO_ANALYSIS | VALIDATION_CHECKS, EXECUTIVE_DASHBOARD | TRUE when every price and fair-value control equals its reset default (contract §6.3, D-029) |
 | `tbl_HistoricalMetrics` | 02-valuation | HISTORICAL_METRICS | 04 | Entity_ID + Metric_ID + Fiscal_Label |
 | `tbl_PeerSummary` | 04-charts | PEER_GROUPS | 02 | Peer_Group_ID + Metric_ID + Exclude_Security_ID |
 | `tbl_PriceControls`, `tbl_SectorShocks` | 03-nav | SCENARIO_ANALYSIS | 03, 04 | Security_ID / Sector |
@@ -60,7 +61,13 @@ These are the **only** things a module may reference in another module's sheets.
 | `H_MATCH_STATUS` | holdings `Holdings_Match_Status` | contract §7.5a: `MATCHED`, `UNMATCHED` (no price-control row) or `NO_PRICE` (blank price); blank for ONA lines |
 | `H_COVERAGE_STATUS` | holdings `Valuation_Coverage_Status` | contract §7.0 classification; a line that is not `MATCHED` is `UNVALUED` even if a fair value exists |
 | `H_ADJ_BASE` | holdings `Adj_Base` | contract §7.2 `w × (FV/P − 1)` for MODEL_VALUED lines, else 0 |
-| `H_MV_MKT` | holdings `MV_Mkt_INR_Cr` | `q × P / 1e7` for positions, disclosed value for ONA lines |
+| `H_ADJ[case]` | holdings `Adj_Bear`, `Adj_Bull`, `Adj_Selected` | as `H_ADJ_BASE` with that case's fair value (Selected: `Selected_Scenario_Fair_Value`), for MATCHED equity lines with a fair value, else 0 |
+| `H_SELECTED_PRICE` | holdings `Selected_Scenario_Price` | the price-control row's `Selected_Scenario_Market_Price`; never re-shocked; absent key → `#N/A` |
+| `H_SCENARIO_FV` | holdings `Scenario_Fair_Value` | blank-safe `Selected_Scenario_Fair_Value` |
+| `H_FINANCIALS_AS_OF` | holdings `Financials_As_Of` | issuer's `Latest_Results_Period_End` for MODEL_VALUED lines, else blank (§7.5c) |
+| `H_MV_MKT` | holdings `MV_Mkt_INR_Cr` | `q × P / 1e7` for marked positions; disclosed value for ONA and MARKET_PASS_THROUGH lines; `#N/A` when quantity or price is missing, never 0 (D-029) |
+| `H_MV_FAIR_BASE` | holdings `MV_Fair_Base_INR_Cr` | `q × FV_Base / 1e7` for MODEL_VALUED lines, else `MV_Mkt_INR_Cr` (FV := P) |
+| `H_MV_SCENARIO` | holdings `MV_Scenario_INR_Cr` | `q × Selected_Scenario_Price / 1e7`; disclosed value for ONA and MARKET_PASS_THROUGH; `#N/A` when quantity or price is missing |
 
 The Bear, Bull and Selected variants follow the same shape. 03-nav adds them to `link_patterns.py` through a change request, so they live next to the others and are tested the same way.
 

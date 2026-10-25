@@ -1,6 +1,6 @@
 # Financial Model Contract
 
-Status: **v1.1, frozen for the first worker wave.** v1.1 (2026-10-25, pre-launch review) adds the separate dates and the equity bridge (§0, §3.1), a single Target Purchase Price (§6), the shock precedence rules (§6.1–6.2) and the three data-quality measures (§7.5). See D-023…D-028. Source requirement: `spec/source/Indian_Equity_Valuation_and_MF_NAV_Model_v3.xml` (spec v3.0). Requirement IDs such as `R004` refer to that file's `<non_negotiable_rules>`. Decision IDs such as `D-004` refer to `spec/decisions.md`.
+Status: **v1.2.** v1.2 (2026-10-25, first worker change requests) adds the holdings link variants and fixes `H_MV_MKT`, adds `out_Controls_At_Default`, and scopes the apply-once rule to applying shocks (§6.1–6.3, D-029). v1.1 (2026-10-25, pre-launch review) adds the separate dates and the equity bridge (§0, §3.1), a single Target Purchase Price (§6), the shock precedence rules (§6.1–6.2) and the three data-quality measures (§7.5). See D-023…D-028. Source requirement: `spec/source/Indian_Equity_Valuation_and_MF_NAV_Model_v3.xml` (spec v3.0). Requirement IDs such as `R004` refer to that file's `<non_negotiable_rules>`. Decision IDs such as `D-004` refer to `spec/decisions.md`.
 
 This document is the single definition of every quantity that crosses a module boundary. If a worker needs a definition that is missing here, they file a change request (`spec/change_requests/`). They do not invent a local definition.
 
@@ -292,7 +292,7 @@ P_scenario = P_0 × (1 + s_global) × (1 + s_sector) × (1 + s_security)        
 Each shock is a decimal (−10% = −0.10). The rules:
 
 1. **From the original price.** `P_0` is always `Original_Market_Price`. No scenario price is ever computed from another scenario price.
-2. **Once.** The three shock inputs are read in exactly one place, `tbl_PriceControls[Effective_Shock_Pct]`. Holdings, NAV Method 3, rebalancing and charts read `Selected_Scenario_Market_Price` and never apply a shock again. QA scans for this (W-17).
+2. **Once.** A shock is applied to a price in exactly one place, `tbl_PriceControls[Effective_Shock_Pct]`. Holdings, NAV Method 3, rebalancing and charts read `Selected_Scenario_Market_Price` and never apply a shock again. The shock inputs may also be *compared with their defaults* by `Control_Warning` (§6.2) and the reset check (§6.3), which never feed a price (D-029). QA scans for this (W-17).
 3. **The mode decides, and precedence is fixed.** `Market_Price_Scenario_Mode` alone chooses the price:
 
 | Mode | Selected_Scenario_Market_Price | Inputs ignored |
@@ -309,7 +309,7 @@ Each shock is a decimal (−10% = −0.10). The rules:
 
 | Condition | Text |
 |---|---|
-| any of the three shocks ≠ 0 and the mode is not `Market Price Shock` | `Price shocks set but ignored (mode: <market mode>)` |
+| any of the three shock inputs ≠ 0 and the mode is not `Market Price Shock`. Each input is tested, not the net shock, so shocks that cancel are still disclosed (D-029, T-PRC-13) | `Price shocks set but ignored (mode: <market mode>)` |
 | `Absolute_Scenario_Price` not blank and the mode is not `Absolute Scenario Market Price` | `Absolute price set but ignored (mode: <market mode>)` |
 | `Fair_Value_Bias_Pct` ≠ 0 and the FV mode is not `Manual Fair-Value Bias` | `Fair-value bias set but ignored (mode: <fair-value mode>)` |
 
@@ -318,7 +318,7 @@ Blank means nothing is ignored. A warning never changes `Control_Status`.
 ### 6.3 Other rules
 
 * No control changes another control's output. The spec's worked example (750 / 500 / −10% / −10% / 595) is test T-PRC-01…03.
-* Reset (spec `<reset_controls>`): a `Reset` column computes the default for every input. The documented reset is to copy the `Reset_*` values over the inputs, or regenerate the workbook. Sheet `VALIDATION_CHECKS` shows `Controls_At_Default = TRUE/FALSE`.
+* Reset (spec `<reset_controls>`): a `Reset` column computes the default for every input. The documented reset is to copy the `Reset_*` values over the inputs, or regenerate the workbook. Sheet `VALIDATION_CHECKS` shows `Controls_At_Default = TRUE/FALSE`, read through the defined name `out_Controls_At_Default` (03-nav, D-029).
 * An unvalued security has a blank `Model_FV_*`. Its fair-value outputs, `Target_Purchase_Price` included, are blank and `Control_Status = UNVALUED`. Market-price outputs still work.
 
 ---

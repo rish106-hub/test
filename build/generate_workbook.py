@@ -77,7 +77,7 @@ def build(test_build: bool, only: str | None = None, out_dir: Path | None = None
             built.add(worker)
         except NotImplementedError as exc:
             report["not_implemented"][spec] = str(exc)
-    if only:
+    if test_build:   # stub the interfaces of every module not built here, so modules merge in any order (D-030)
         report["stubbed"] = add_stubs(ctx, data, built)
     main_sheets.build_dashboard(ctx, data)
     if not only or only == CHART_BUILDER[0]:

@@ -1,4 +1,5 @@
 """Tests of the 00-main shared layer: schema, ownership, Excel rules, units, fixtures, build."""
+import json
 import subprocess
 import sys
 from datetime import date
@@ -7,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from build.data_loader import load_model_data
-from build.generate_workbook import SHEET_ORDER, build
+from build.generate_workbook import MODULE_BUILDERS, SHEET_ORDER, build
 from src.common import excel_contract as X
 from src.common import ownership
 from src.common.schema import ALL_TABLES, TABLES
@@ -160,6 +161,11 @@ def test_test_build_and_isolated_builds_succeed(tmp_path):
     full = build(test_build=True, out_dir=tmp_path / "full")
     assert Path(full["workbook"]).exists()
     assert "VAL_HDFC_BANK" in full["unbuilt_sheets"]          # gaps are listed, not hidden
+    # D-030: only interfaces of modules that did not build are stubbed, whatever subset has merged
+    unbuilt_owners = {w for w, spec in MODULE_BUILDERS if spec in full["not_implemented"]}
+    manifest = json.loads((tmp_path / "full" / "manifest.json").read_text())
+    for name in full["stubbed"]:
+        assert ownership.sheet_owner(manifest["tables"][name]["sheet"]) in unbuilt_owners, name
     iso = build(test_build=True, only="03-nav", out_dir=tmp_path / "iso")
     assert "tbl_ValuationOutputs" in iso["stubbed"]
 
