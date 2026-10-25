@@ -4,6 +4,7 @@ This repository generates one formula-driven Excel workbook, `Indian_Equity_Valu
 
 ## Read before doing anything
 
+0. `tracker.md`: live project state, who is doing what, and how to take over from another agent. Only 00-main edits it.
 1. Your brief: `spec/worker_briefs/<your-id>.md`.
 2. `spec/financial_model_contract.md`: the only definitions of fair value, NAV methods, weights, coverage, scenario controls and units.
 3. `spec/data_schema.md` (generated from `src/common/schema.py`), `spec/workbook_interface.md`, `spec/module_contracts.toml` (what your module must deliver) and `spec/decisions.md`.
@@ -13,7 +14,7 @@ This repository generates one formula-driven Excel workbook, `Indian_Equity_Valu
 
 | ID | Session | Owns (see `spec/ownership.toml` for the exact globs) |
 |---|---|---|
-| 00-main | architecture and integration (opus, xhigh) | `CLAUDE.md`, `spec/`, `src/common/`, `build/`, `tools/`, `data/reference/`, `tests/contract/`, `tests/fixtures/` |
+| 00-main | architecture and integration (opus, xhigh) | `CLAUDE.md`, `tracker.md`, `AGENTS.md`, `spec/`, `src/common/`, `build/`, `tools/`, `data/reference/`, `tests/contract/`, `tests/fixtures/` |
 | 01-data | data and source audit (sonnet, high) | `src/ingestion/`, `data/raw/`, `data/canonical/` (most), `data/source_manifest.csv` |
 | 02-valuation | bank and insurance valuation (opus, xhigh) | `src/valuations/`, `data/canonical/assumptions.csv`, VAL_* sheets |
 | 03-nav | MF NAV engine and scenario controls (sonnet, high) | `src/scenarios/`, `src/fund_nav/`, `data/scenarios/` |

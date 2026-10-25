@@ -39,6 +39,11 @@ def test_consumed_interfaces_exist_and_can_be_stubbed_for_isolated_builds():
         for pat in c["consumes"]:
             if pat.startswith("in_"):
                 continue
+            if pat.startswith("out_"):   # a consumed defined name must be declared by exactly one other module
+                definers = [o for o, oc in MODULES.items() if o != w and any(
+                    fnmatch.fnmatchcase(pat, d) for d in oc["defines_names"])]
+                assert len(definers) == 1, f"{w} consumes {pat}, defined by {definers}"
+                continue
             hits = [t for t in BUILT_BY if fnmatch.fnmatchcase(t, pat)]
             assert hits, f"{w} consumes {pat}, which no module builds"
             for t in hits:
@@ -105,9 +110,12 @@ def test_checker_rejects(change, expected):
 
 
 def test_module_doc_templates_are_rejected_until_filled(tmp_path):
-    for w, c in MODULES.items():
-        if c["module_doc"]:
-            assert check_doc(c), f"{w}: the TODO template must not pass"
+    # Uses a copy of the shipped template, so the test stays valid after workers fill in their own docs.
+    template = tmp_path / "TEMPLATE.md"
+    template.write_text("# M\n" + "".join(f"## {s}\n\nTODO\n\n" for s in
+                                         ("Inputs", "Outputs", "Assumptions", "Limitations", "Tests")))
+    assert check_doc({"module_doc": str(template)}), "the TODO template must not pass"
+    assert check_doc({"module_doc": str(tmp_path / "absent.md")}) == [f"{tmp_path / 'absent.md'} missing"]
     doc = tmp_path / "MODULE.md"
     doc.write_text("# M\n" + "".join(f"## {s}\n\nFilled in.\n\n" for s in
                                     ("Inputs", "Outputs", "Assumptions", "Limitations", "Tests")))
