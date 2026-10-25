@@ -68,11 +68,11 @@ Last updated: 2026-10-25 by 00-main (integration session).
 | ID | Role | Model / effort | Branch | Status | Last commit | Pushed? | Next action |
 |---|---|---|---|---|---|---|---|
 | 00-main | Integration, contract, this file | opus / xhigh | `claude/financial-modeling-architecture-o2xiwz` | Waiting for worker reports | see `git log` | yes | Integrate each worker as it reports (§7) |
-| 01-data | Data and source audit | sonnet / high | `wave1/01-data` | RUNNING | none yet (base `f752ee1`) | yes, after each commit | Feasibility report; both fund snapshots; HDFC Bank source trail; prices; NAVs; G-sec yield |
-| 02-valuation | Bank valuation | opus / xhigh | `wave1/02-valuation` | RUNNING, fixture phase | none yet | yes, after each commit | Reference functions + bank sheet on fixtures; then real HDFC Bank after 01 merges |
-| 03-nav | NAV engine and controls | sonnet / high | `wave1/03-nav` | RUNNING, fixture phase | `88a3998` (reference functions) | yes, after each commit | Engine on fixtures; then the real fund holding HDFC Bank after 01 and 02 merge |
+| 01-data | Data and source audit | sonnet / high | `wave1/01-data` | RUNNING, resumed 12:29 UTC in a recreated worktree; first-run downloads were lost (never committed) | none yet (base `f752ee1`) | yes, after each commit | Feasibility report; both fund snapshots; HDFC Bank source trail; prices; NAVs; G-sec yield |
+| 02-valuation | Bank valuation | opus / xhigh | `wave1/02-valuation` | RUNNING, fixture phase; next: parameter registry, composite bank model, sheet builder | `7b7607a` (reference functions) | yes, after each commit | Reference functions + bank sheet on fixtures; then real HDFC Bank after 01 merges |
+| 03-nav | NAV engine and controls | sonnet / high | `wave1/03-nav` | RUNNING, fixture phase | `81ba348` (SCENARIO_ANALYSIS, holdings sheets, MF_NAV_CALCULATOR) | yes, after each commit | Engine on fixtures; then the real fund holding HDFC Bank after 01 and 02 merge |
 | 04-charts | Charts and peers | sonnet / medium | none | ON HOLD until G1 (D-028) | none | none | none |
-| 05-qa | Independent reviewer, clean room | opus / high | `wave1/05-qa` | RUNNING | none yet | yes, after each commit | I and W layers, runner; provenance audit and E-01…E-04 after real data |
+| 05-qa | Independent reviewer, clean room | opus / high | `wave1/05-qa` | RUNNING; next: W layer | `c117fdb` (I layer) | yes, after each commit | I and W layers, runner; provenance audit and E-01…E-04 after real data |
 
 The model and effort column is the plan from `CLAUDE.md`. Use the closest equivalent in another tool. What matters is that 02 and 05 get the strongest reasoning.
 
@@ -147,6 +147,7 @@ After 01-data merges, 00-main must also:
 |---|---|---|---|---|
 | R-1 | Worker branches were local only | Unmerged work would be lost if the container were reclaimed | 00-main | MITIGATED 2026-10-25: all `wave1/*` pushed. Workers push after every commit; uncommitted edits are still at risk |
 | R-2 | www.nseindia.com and www.hdfcfund.com returned HTTP 403 to a plain request on 2026-10-25 (BSE, AMFI, PPFAS, RBI, SEBI, Nifty Indices returned 200) | NSE prices and the HDFC Mid Cap disclosure may need alternative sources, or be marked unavailable | 01-data | OPEN |
+| R-4 | Usage limit: all four workers stopped together on HTTP 429 (session limit) on 2026-10-25 | Work pauses until the limit resets; uncommitted edits are at risk if a worktree is removed while paused | 00-main | OPEN. Workers now commit and push in small steps. Resume each worker from its pushed branch (§6) |
 | R-3 | `in_Valuation_Date`, `in_Price_Date` and `in_Risk_Free_Rate` are blank | A production valuation can't run until they are set from 01-data's sourced data | 00-main | OPEN, waiting on 01-data |
 
 ## 9. Change requests and findings
@@ -161,6 +162,9 @@ Change requests live in `spec/change_requests/`, findings in `qa/findings/`.
 
 Newest first. One line per event: what changed, the commit, the evidence.
 
+- **2026-10-25 12:29 UTC.** All four workers hit the usage limit (HTTP 429, reset 12:10 UTC) and were resumed at 12:29.
+  - Branch heads at that point: 01 `f752ee1` (no commits; its worktree was removed and its downloads lost), 02 `7b7607a`, 03 `81ba348`, 05 `c117fdb`.
+  - 01-data was resumed in a recreated worktree. All workers were told to commit and push in smaller steps.
 - **2026-10-25.** With the user's approval, all four `wave1/*` branches were pushed and verified with `git ls-remote`: 01, 02 and 05 at `f752ee1`, 03 at `88a3998`. Workers were told to push their own branch after every commit.
 - **2026-10-25.** `tracker.md` and `AGENTS.md` added (handover for any agent tool); both registered to 00-main in `spec/ownership.toml`.
 - **2026-10-25.** `.claude/worktrees/` (agent worktrees) added to `.gitignore`; `d60f7b6` pushed.
