@@ -105,3 +105,43 @@ def rolling_returns(series: Series, window_days: int) -> list[tuple[date, float]
 def window(series: Series, start: date, end: date) -> list[tuple[date, float]]:
     """Observations with start <= date <= end (the series a window's risk metrics are computed from)."""
     return [(d, v) for d, v in series if start <= d <= end]
+
+
+def last_date_on_or_before(series: Series, d: date) -> date | None:
+    best = None
+    for dt, _ in series:
+        if dt > d:
+            break
+        best = dt
+    return best
+
+
+def window_metrics(series: Series, end: date, days: int, rf: float | None, mar: float | None,
+                   bench: Series | None = None) -> dict:
+    """All section 7.9 metrics for the window (end - days, end]; the workbook's tbl_Nav_Perf row must equal this.
+
+    The window series starts at the last NAV on or before the window start (the base observation) and runs
+    to `end`. Every metric is None when the history does not reach back to the window start.
+    """
+    out = {"base_date": None, "n_returns": 0, "return": None, "cagr": None, "vol": None, "max_drawdown": None,
+           "downside_dev": None, "sharpe": None, "sortino": None, "bench_return": None, "excess_return": None}
+    start = end - timedelta(days=days)
+    if not _covers(series, start, end):
+        return out
+    base = last_date_on_or_before(series, start)
+    ws = [(d, v) for d, v in series if base <= d <= end]
+    out["base_date"] = base
+    out["n_returns"] = len(ws) - 1
+    out["return"] = period_return(series, start, end)
+    out["cagr"] = cagr(series, start, end)
+    out["vol"] = annualised_volatility(ws)
+    out["max_drawdown"] = max_drawdown(ws)
+    out["downside_dev"] = None if mar is None else downside_deviation(ws, mar)
+    out["sharpe"] = None if rf is None or out["vol"] is None else sharpe(out["cagr"], rf, out["vol"])
+    out["sortino"] = (None if mar is None or out["downside_dev"] is None
+                      else sortino(out["cagr"], mar, out["downside_dev"]))
+    if bench:
+        out["bench_return"] = period_return(bench, start, end)
+        if out["bench_return"] is not None:
+            out["excess_return"] = out["return"] - out["bench_return"]
+    return out

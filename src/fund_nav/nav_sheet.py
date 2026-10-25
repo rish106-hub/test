@@ -187,6 +187,12 @@ def build_nav_sheet(ctx: WorkbookContext, data, fund_tables: dict[str, str]) -> 
     cols = xl.schema_table_columns(S.NAV_SUMMARY, summary_formulas(), sheet=SHEET)
     ctx.add_table(OWNER, SHEET, summary_top, 0, SUMMARY, cols, [[pid] for pid in plan_ids])
     _statement(ctx, ws, plan_ids, stmt, statement_top)
+    zone_col = xl.col_name(0, len(plan_ids) + 3)
+    ctx.reserve_chart_zone(OWNER, "NAV_COMPARE", SHEET, f"{zone_col}3",
+                           "Official NAV, base/bear/bull fair NAV and scenario NAV comparison per plan (reads tbl_NAVSummary); "
+                           "official NAV history versus modelled fair NAV range")
+    ctx.reserve_chart_zone(OWNER, "NAV_COVERAGE_FRESHNESS", SHEET, f"{zone_col}25",
+                           "Valuation coverage and source freshness: the three data-quality measures side by side, never one score")
     ws.set_column(0, 0, 70)
     ws.set_column(1, max(len(cols), len(calc_cols)), 18)
     return NavLayout(plan_ids, plan_fund, summary_top, calc_top, statement_top)

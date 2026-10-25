@@ -1,0 +1,5 @@
+Line_ID,Sector,Security_ID,Sector_Weight_Pct,Constituent_Weight_Pct,Assumed_Buy_Price_INR,Quantity_Override
+H1,Financial Services,S90001,0.30,0.20,,
+H2,Financial Services,S90002,0.30,0.80,,
+H3,Information Technology,S90004,0.60,1.00,,
+H4,Not applicable,,0.10,1.00,,
